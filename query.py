@@ -5,6 +5,7 @@ import json
 import sys
 import logging
 from bs4 import BeautifulSoup
+from send_email import send_notification_email
 
 # --- 1. 日志配置 ---
 logger = logging.getLogger('TjuEcardQuery')
@@ -117,20 +118,14 @@ def perform_auto_login(session: requests.Session, username: str, password: str) 
 # 【新增】这是我们封装的新函数，用于处理重连逻辑
 # ==============================================================================
 def handle_relogin(session: requests.Session, config: dict) -> bool:
-    """
-    处理自动重新登录的完整逻辑。
-    检查凭据 -> 尝试登录 -> 保存Cookie -> 处理失败。
-    :param session: requests的会话对象。
-    :param config: 加载后的配置字典。
-    :return: 登录成功返回 True，失败则直接退出脚本。
-    """
-    # 1. 检查凭据是否存在
     if "credentials" not in config or "username" not in config["credentials"] or "password" not in config[
         "credentials"]:
         msg = "配置文件中缺少登录凭据，无法自动登录。"
         print(f"[错误] {msg}")
         logger.error(msg)
+        logger.info("--- 查询脚本运行结束 ---\n")
         print(f"\n[操作建议] 请重新运行 setup.py 更新您的配置。")
+        send_query_email(config, "【警告】电费查询失败通知", msg)
         input("按回车键退出。")
         sys.exit(1)
 
@@ -144,10 +139,41 @@ def handle_relogin(session: requests.Session, config: dict) -> bool:
         msg = "自动重新登录失败。保存的密码可能已更改。"
         print(f"[错误] {msg}")
         logger.error(msg)
+        logger.info("--- 查询脚本运行结束 ---\n")
         print(f"\n[操作建议] 请重新运行 setup.py 更新您的配置。")
+        send_query_email(config, "【警告】电费查询失败通知", msg)
         input("按回车键退出。")
         sys.exit(1)
 
+
+# 【新增】一个辅助函数，用于发送查询结果邮件
+def send_query_email(config: dict, subject: str, body: str):
+    """检查配置并发送邮件，如果未配置则静默跳过。"""
+    if not config:
+        logger.warning("尝试发送邮件，但传入的config为None。")
+        print("[警告] 未配置邮箱通知，无法发送邮件。")
+        return  # 直接返回，不做任何事
+    if "email_notifier" in config and config["email_notifier"].get("qq_email") and config["email_notifier"].get(
+            "auth_code"):
+        notifier_config = config["email_notifier"]
+        print("[信息] 正在发送邮件通知...")
+        success = send_notification_email(
+            sender_email=notifier_config["qq_email"],
+            auth_code=notifier_config["auth_code"],
+            recipient_email=notifier_config["qq_email"],
+            subject=subject,
+            body=body
+        )
+        if success:
+            logger.info(f"邮件通知发送成功到{notifier_config["qq_email"]}。")
+            print("[成功] 邮件通知发送成功。")
+        else:
+            print("[警告] 邮件通知发送失败，请检查 setup.py 中的邮箱配置。")
+            logger.error(f"邮件通知发送失败到{notifier_config["qq_email"]}。")
+    else:
+        logger.info("未配置邮箱通知，跳过发送邮件。")
+        # 如果配置文件中没有邮箱信息，则不执行任何操作
+        pass
 
 # ==============================================================================
 
@@ -159,6 +185,7 @@ if __name__ == "__main__":
     if not config:
         msg = "因配置文件中房间参数无效或不存在，脚本退出。"
         logger.error(msg)
+        logger.info("--- 查询脚本运行结束 ---\n")
         print(f"\n[操作建议] 请先运行 setup.py 来生成 {USER_CONFIG_FILE}。")
         input("按回车键退出。")
         sys.exit(1)
@@ -187,14 +214,11 @@ if __name__ == "__main__":
         except requests.RequestException:
             print("[警告] 会话验证请求失败。")
 
-    # 【关键修改】当会话无效时，调用新的重连函数
     if not is_session_valid:
         print("[信息] 会话无效或不存在，尝试使用配置文件自动登录...")
         logger.info("会话无效或不存在，尝试使用配置文件自动登录")
-        # 直接调用封装好的函数，如果成功，则更新会话状态
         if handle_relogin(session, config):
             is_session_valid = True
-        # 注意：如果 handle_relogin 失败，脚本会直接退出，所以不需要 else 分支
 
     # --- 执行查询 ---
     selected_sysid = selection['system']['id']
@@ -211,7 +235,9 @@ if __name__ == "__main__":
     print(f"\n--- 开始查询电费: {room_path} ---")
 
     query_successful = False
-    for attempt in range(2):  # 最多尝试2次
+    final_message = ""  # 用于邮件内容
+
+    for attempt in range(2):
         try:
             page_headers = session.headers.copy()
             del page_headers['X-Requested-With']
@@ -232,11 +258,11 @@ if __name__ == "__main__":
                     if handle_relogin(session, config):
                         print("[信息] 重连成功，正在重试查询...")
                         logger.info("重连成功，重试查询。")
-                        continue  # 重连成功，继续下一次循环（即重试）
-                    # 如果重连失败，handle_relogin 会直接退出，所以下面的代码不会执行
-                else:  # 如果是第二次尝试仍然失败
-                    print("[错误] 重试后依然无法获取Token。")
-                    logger.error("重试后依然无法获取Token。")
+                        continue
+                else:
+                    final_message = "重试后依然无法获取Token。"
+                    print(f"[错误] {final_message}")
+                    logger.error(final_message)
                     break
 
             # 执行查询
@@ -276,20 +302,27 @@ if __name__ == "__main__":
                     f"\t查询结果: {result_text}"
                 )
                 query_successful = True
+                final_message = f"查询房间: {room_path}\n\n查询结果:\n{result_text}"
                 break  # 查询成功，跳出循环
             else:
                 msg = f"查询失败: {result.get('retmsg')}"
                 print(msg)
                 logger.error(f"{msg} | 查询房间: {room_path} | 查询参数: {query_payload}")
+                final_message = f"查询房间: {room_path}\n\n查询失败，服务器返回信息: {result.get('retmsg')}"
                 break  # 服务器返回错误，无需重试
 
         except (requests.RequestException, json.JSONDecodeError, Exception) as e:
             msg = f"查询过程中发生错误: {e}"
             print(msg)
             logger.error(f"{msg} | 查询房间: {room_path} | 查询参数: {query_payload}")
+            final_message = f"查询房间: {room_path}\n\n查询脚本在执行过程中遇到一个错误: {e}"
             break  # 发生异常，无需重试
 
-    if not query_successful:
+    # 【修改】无论成功失败，都在最后发送邮件
+    if query_successful:
+        send_query_email(config, "电费查询成功通知", final_message)
+    else:
+        send_query_email(config, "【警告】电费查询失败通知", final_message)
         print("\n[操作建议] 请检查网络或运行 setup.py 刷新配置。")
 
     logger.info("--- 查询脚本运行结束 ---\n")

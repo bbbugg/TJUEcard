@@ -4,12 +4,11 @@ import pickle
 import os
 import time
 import json
+from send_email import send_notification_email
 
 # --- 1. 配置区 ---
 BASE_DOMAIN = 'http://59.67.37.10:8180'
-# 【新】统一的用户配置文件
 USER_CONFIG_FILE = 'user_config.json'
-# 其他配置
 LOAD_ELECTRIC_INDEX_URL = f'{BASE_DOMAIN}/epay/electric/load4electricindex'
 LOGIN_URL = f'{BASE_DOMAIN}/epay/j_spring_security_check'
 QUERY_URL = f'{BASE_DOMAIN}/epay/electric/queryelectricbill'
@@ -218,8 +217,8 @@ def save_config_to_json(filename: str, config_data: dict):
 # --- 3. 主程序 ---
 if __name__ == "__main__":
     print("欢迎使用电费查询配置程序 (setup.py)。")
-    print("本程序将引导您登录并选择一个房间，然后将配置保存供 query.py 使用。")
-    print("\n注意：您的密码将以明文形式保存在 user_config.json 文件中，请妥善保管此文件。")
+    print("本程序将引导您登录、选择房间并配置邮件提醒。")
+    print("\n注意：您的密码和邮箱授权码将以明文形式保存在 user_config.json 文件中，请妥善保管此文件。")
 
     session = requests.Session()
     session.headers.update({
@@ -231,6 +230,39 @@ if __name__ == "__main__":
     if not username:
         input("按回车键退出。")
         exit()
+
+    # 【新增】循环以允许用户在邮件测试失败后重试
+    email_configured = False
+    while not email_configured:
+        print("\n--- 邮件通知配置 ---")
+        print("您需要提供一个QQ邮箱用于接收通知，以及该邮箱的SMTP授权码。")
+        print(
+            "授权码不是您的QQ密码，请前往QQ邮箱 -> 设置 -> 账号与安全 -> 安全设置 -> 开启“POP3/IMAP/SMTP/Exchange/CardDAV 服务” -> 生成授权码获取。")
+        user_email = input("请输入您的QQ邮箱: ")
+        user_auth_code = input("请输入您的邮箱授权码: ")
+
+        if not user_email or not user_auth_code:
+            print("[警告] 您未输入邮箱或授权码，将无法使用邮件通知功能。")
+            if input("确实要跳过邮件配置吗？(y/n): ").lower() == 'y':
+                user_email, user_auth_code = None, None  # 明确设置为空
+                break  # 跳出邮件配置循环
+            else:
+                continue  # 重新输入
+
+        print("\n[信息] 正在发送一封测试邮件以验证您的配置...")
+        email_success = send_notification_email(
+            sender_email=user_email,
+            auth_code=user_auth_code,
+            recipient_email=user_email,
+            subject="电费查询助手 - 邮箱配置测试",
+            body="如果您收到此邮件，说明您的邮箱配置成功！现在可以继续进行后续设置。"
+        )
+
+        if email_success:
+            print("[成功] 测试邮件发送成功！请检查您的收件箱。")
+            email_configured = True
+        else:
+            print("[错误] 测试邮件发送失败！请重试")
 
     while True:
         selected_system = select_electric_system(session)
@@ -281,7 +313,22 @@ if __name__ == "__main__":
             result = query_response.json()
 
             if result.get('retcode') == 0:
-                print("[成功] 您的选择已通过验证！")
+                result_text = ""
+                if result.get('multiflag'):
+                    print("\n========================\n查询成功！(该房间为一房多表模式)")
+                    meter_results = []
+                    for meter in result.get('elecRoomData', []):
+                        line = f"  - {meter.get('name')}: 剩余电量 {meter.get('restElecDegree')} 度"
+                        print(line)
+                        meter_results.append(line.strip())
+                    print("========================")
+                    result_text = " | ".join(meter_results)
+                else:
+                    remaining_electricity = result.get('restElecDegree')
+                    print("\n========================")
+                    print(f"查询成功！剩余电量: {remaining_electricity} 度")
+                    print("========================")
+                    result_text = f"剩余电量: {remaining_electricity} 度"
 
                 # 构建最终的配置文件
                 config_data = {
@@ -294,6 +341,12 @@ if __name__ == "__main__":
                         **full_selection
                     }
                 }
+                # 只有在用户配置了邮箱的情况下才添加
+                if user_email and user_auth_code:
+                    config_data["email_notifier"] = {
+                        "qq_email": user_email,
+                        "auth_code": user_auth_code
+                    }
 
                 # 验证成功后，才保存所有配置
                 save_config_to_json(USER_CONFIG_FILE, config_data)
