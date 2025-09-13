@@ -7,7 +7,9 @@ import json
 
 # --- 1. 配置区 ---
 BASE_DOMAIN = 'http://59.67.37.10:8180'
-SELECTION_CACHE_FILE = 'selection_cache.json'
+# 【新】统一的用户配置文件
+USER_CONFIG_FILE = 'user_config.json'
+# 其他配置
 LOAD_ELECTRIC_INDEX_URL = f'{BASE_DOMAIN}/epay/electric/load4electricindex'
 LOGIN_URL = f'{BASE_DOMAIN}/epay/j_spring_security_check'
 QUERY_URL = f'{BASE_DOMAIN}/epay/electric/queryelectricbill'
@@ -44,8 +46,8 @@ def extract_csrf_token(html_content: str) -> str | None:
     return None
 
 
-def perform_login(session: requests.Session) -> bool:
-    print("--- 开始登录流程 ---")
+def perform_login(session: requests.Session) -> tuple[str | None, str | None]:
+    print("--- 开始强制登录流程 ---")
     try:
         page_response = session.get(LOGIN_PAGE_URL)
         page_response.raise_for_status()
@@ -53,11 +55,11 @@ def perform_login(session: requests.Session) -> bool:
         csrf_input_tag = soup.find('input', {'name': '_csrf'})
         if not csrf_input_tag or not csrf_input_tag.has_attr('value'):
             print("[错误] 在登录页面中未找到 _csrf token！")
-            return False
+            return None, None
         csrf_token = csrf_input_tag['value']
     except requests.RequestException as e:
         print(f"[错误] 访问登录页面失败: {e}")
-        return False
+        return None, None
 
     username = input("请输入用户名: ")
     password = input("请输入密码: ")
@@ -68,13 +70,12 @@ def perform_login(session: requests.Session) -> bool:
         response.raise_for_status()
         if '<frameset' not in response.text:
             print("[错误] 登录失败！请检查用户名或密码。")
-            return False
+            return None, None
         print("[成功] 登录成功！")
-        return True
+        return username, password
     except requests.RequestException as e:
         print(f"[错误] 登录请求失败: {e}")
-        return False
-
+        return None, None
 
 def get_user_choice(options: list) -> dict | None:
     if not options:
@@ -206,19 +207,19 @@ def select_electric_system(session: requests.Session) -> dict | None:
         return None
 
 
-def save_selection_to_cache(filename: str, selection_data: dict):
+def save_config_to_json(filename: str, config_data: dict):
     try:
         with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(selection_data, f, ensure_ascii=False, indent=4)
-        print(f"[成功] 您的选择已缓存到 {filename}")
+            json.dump(config_data, f, ensure_ascii=False, indent=4)
+        print(f"[成功] 您的配置已保存到 {filename}")
     except IOError as e:
-        print(f"[错误] 保存缓存失败: {e}")
-
+        print(f"[错误] 保存配置文件失败: {e}")
 
 # --- 3. 主程序 ---
 if __name__ == "__main__":
-    print("欢迎使用电费查询配置程序。")
-    print("本程序将引导您登录并选择一个房间，然后将结果保存供 query.py 使用。")
+    print("欢迎使用电费查询配置程序 (setup.py)。")
+    print("本程序将引导您登录并选择一个房间，然后将配置保存供 query.py 使用。")
+    print("\n注意：您的密码将以明文形式保存在 user_config.json 文件中，请妥善保管此文件。")
 
     session = requests.Session()
     session.headers.update({
@@ -226,7 +227,8 @@ if __name__ == "__main__":
         'X-Requested-With': 'XMLHttpRequest'
     })
 
-    if not perform_login(session):
+    username, password = perform_login(session)
+    if not username:
         input("按回车键退出。")
         exit()
 
@@ -267,8 +269,6 @@ if __name__ == "__main__":
             'roomNo': full_selection['room']['id']
         }
 
-        full_selection['system'] = selected_system
-
         print("\n--- 正在验证您的选择并保存配置 ---")
         try:
             query_headers = {
@@ -282,11 +282,24 @@ if __name__ == "__main__":
 
             if result.get('retcode') == 0:
                 print("[成功] 您的选择已通过验证！")
+
+                # 构建最终的配置文件
+                config_data = {
+                    "credentials": {
+                        "username": username,
+                        "password": password
+                    },
+                    "selection": {
+                        "system": selected_system,
+                        **full_selection
+                    }
+                }
+
                 # 验证成功后，才保存所有配置
-                save_selection_to_cache(SELECTION_CACHE_FILE, full_selection)
+                save_config_to_json(USER_CONFIG_FILE, config_data)
                 save_cookies(session, COOKIE_FILE)
                 print("\n所有配置已成功保存！现在您可以使用 query.py 进行快速查询。")
-                break  # 成功，退出主循环
+                break
             else:
                 print(f"[错误] 验证失败: {result.get('retmsg')}")
                 input("按回车键返回主菜单...")
