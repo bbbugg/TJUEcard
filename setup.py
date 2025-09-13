@@ -5,7 +5,7 @@ import os
 import time
 import json
 
-# --- 1. 用户配置区 (无变化) ---
+# --- 1. 配置区 ---
 BASE_DOMAIN = 'http://59.67.37.10:8180'
 SELECTION_CACHE_FILE = 'selection_cache.json'
 LOAD_ELECTRIC_INDEX_URL = f'{BASE_DOMAIN}/epay/electric/load4electricindex'
@@ -13,7 +13,6 @@ LOGIN_URL = f'{BASE_DOMAIN}/epay/j_spring_security_check'
 QUERY_URL = f'{BASE_DOMAIN}/epay/electric/queryelectricbill'
 COOKIE_FILE = 'my_session.pkl'
 LOGIN_PAGE_URL = f'{BASE_DOMAIN}/epay/person/index'
-VERIFY_LOGIN_URL = f'{BASE_DOMAIN}/epay/person/index'
 API_BASE_URL = f'{BASE_DOMAIN}/epay/electric'
 API_URLS = {
     'area': f'{API_BASE_URL}/queryelectricarea',
@@ -31,15 +30,10 @@ KEY_MAP = {
 }
 
 
-# --- 2. 核心功能函数 (无变化) ---
+# --- 2. 核心功能函数 ---
 def save_cookies(session: requests.Session, file_name: str) -> None:
     with open(file_name, 'wb') as file: pickle.dump(session.cookies, file)
-    print(f"会话已成功保存到 {file_name}")
-
-
-def load_cookies(session: requests.Session, file_name: str) -> None:
-    with open(file_name, 'rb') as file: session.cookies.update(pickle.load(file))
-    print(f"已从 {file_name} 加载会话")
+    print(f"\n[成功] 新的会话已成功保存到 {file_name}")
 
 
 def extract_csrf_token(html_content: str) -> str | None:
@@ -51,18 +45,18 @@ def extract_csrf_token(html_content: str) -> str | None:
 
 
 def perform_login(session: requests.Session) -> bool:
-    print("Cookie 文件无效或不存在，需要手动登录。")
+    print("--- 开始登录流程 ---")
     try:
         page_response = session.get(LOGIN_PAGE_URL)
         page_response.raise_for_status()
         soup = BeautifulSoup(page_response.text, 'html.parser')
         csrf_input_tag = soup.find('input', {'name': '_csrf'})
         if not csrf_input_tag or not csrf_input_tag.has_attr('value'):
-            print("错误：在登录页面中未找到 _csrf token！")
+            print("[错误] 在登录页面中未找到 _csrf token！")
             return False
         csrf_token = csrf_input_tag['value']
     except requests.RequestException as e:
-        print(f"访问登录页面失败: {e}")
+        print(f"[错误] 访问登录页面失败: {e}")
         return False
 
     username = input("请输入用户名: ")
@@ -73,17 +67,15 @@ def perform_login(session: requests.Session) -> bool:
         response = session.post(LOGIN_URL, data=login_data, headers=headers)
         response.raise_for_status()
         if '<frameset' not in response.text:
-            print("登录失败！请检查用户名或密码。")
+            print("[错误] 登录失败！请检查用户名或密码。")
             return False
-        print("登录成功！")
-        save_cookies(session, COOKIE_FILE)
+        print("[成功] 登录成功！")
         return True
     except requests.RequestException as e:
-        print(f"登录请求失败: {e}")
+        print(f"[错误] 登录请求失败: {e}")
         return False
 
 
-# --- 3. 交互式查询与缓存函数 ---
 def get_user_choice(options: list) -> dict | None:
     if not options:
         print("未找到可用选项。")
@@ -114,14 +106,14 @@ def fetch_options(session: requests.Session, level: str, payload: dict, csrf_tok
         try:
             data = response.json()
         except json.JSONDecodeError:
-            print(f"错误：服务器在请求 '{level}' 列表时没有返回有效的JSON。")
+            print(f"[错误] 服务器在请求 '{level}' 列表时没有返回有效的JSON。")
             return []
         raw_list = data.get(map_keys['list'], [])
         for item in raw_list:
             normalized_options.append({'id': str(item[map_keys['id']]), 'name': str(item[map_keys['name']])})
         return normalized_options
     except requests.RequestException as e:
-        print(f"获取 {level} 列表时发生网络错误: {e}")
+        print(f"[错误] 获取 {level} 列表时发生网络错误: {e}")
     return []
 
 
@@ -129,14 +121,11 @@ def interactive_query_flow(session: requests.Session, csrf_token: str, sysid: st
     print("\n--- 正在自动选择默认校区 ---")
     area_options = fetch_options(session, 'area', {'sysid': sysid}, csrf_token, token_page_url)
     if not area_options:
-        print("错误：无法获取校区列表。")
+        print("[错误] 无法获取校区列表。")
         return None
     selected_area = area_options[0]
     print(f"已自动选择: {selected_area['name']}")
-    selected_district = None
-    selected_buis = None
-    selected_floor = None
-    selected_room = None
+    selected_district, selected_buis, selected_floor, selected_room = None, None, None, None
     while True:
         if not selected_district:
             print("\n--- 请选择缴费区域 ---")
@@ -181,7 +170,6 @@ def interactive_query_flow(session: requests.Session, csrf_token: str, sysid: st
                 continue
             selected_room = choice
         break
-
     return {
         'area': selected_area, 'district': selected_district,
         'buis': selected_buis, 'floor': selected_floor, 'room': selected_room
@@ -192,8 +180,7 @@ def select_electric_system(session: requests.Session) -> dict | None:
     print("\n--- 正在获取电控系统列表 ---")
     try:
         headers = session.headers.copy()
-        if 'X-Requested-With' in headers:
-            del headers['X-Requested-With']
+        if 'X-Requested-With' in headers: del headers['X-Requested-With']
         response = session.get(LOAD_ELECTRIC_INDEX_URL, headers=headers)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -210,194 +197,103 @@ def select_electric_system(session: requests.Session) -> dict | None:
                 except IndexError:
                     continue
         if not available_options:
-            print("错误：在页面上未找到指定的电控系统选项。")
+            print("[错误] 在页面上未找到指定的电控系统选项。")
             return None
         print("\n--- 请选择电控系统 ---")
         return get_user_choice(available_options)
     except requests.RequestException as e:
-        print(f"访问电控系统选择页面失败: {e}")
+        print(f"[错误] 访问电控系统选择页面失败: {e}")
         return None
-
-
-# 【关键修改】增强的缓存加载函数
-def load_selection_from_cache(filename: str) -> dict | None:
-    """
-    从文件加载并严格验证缓存的选择。
-    """
-    try:
-        with open(filename, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
-        # 文件不存在或不是有效的JSON，都视为无缓存
-        return None
-
-    # 定义所有必需的顶级键
-    required_keys = ['system', 'area', 'district', 'buis', 'floor', 'room']
-
-    # 循环检查每个键
-    for key in required_keys:
-        # 检查1: 顶级键是否存在
-        if key not in data:
-            print(f"缓存文件校验失败：缺少顶级键 '{key}'。")
-            return None
-
-        # 检查2: 对应的值是否是字典，且包含'id'键
-        item = data.get(key)
-        if not isinstance(item, dict) or 'id' not in item:
-            print(f"缓存文件校验失败：'{key}' 的内容格式不正确（不是字典或缺少'id'）。")
-            return None
-
-        # 检查3: 'id'的值不能为空
-        if not item['id']:  # 这个检查能同时捕获 None 和 ""
-            print(f"缓存文件校验失败：'{key}' 的 'id' 不能为空。")
-            return None
-
-    # 所有检查通过，返回数据
-    return data
 
 
 def save_selection_to_cache(filename: str, selection_data: dict):
     try:
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(selection_data, f, ensure_ascii=False, indent=4)
-        print(f"选择已缓存到 {filename}")
+        print(f"[成功] 您的选择已缓存到 {filename}")
     except IOError as e:
-        print(f"保存缓存失败: {e}")
+        print(f"[错误] 保存缓存失败: {e}")
 
 
-# --- 4. 主函数 (无变化) ---
-def get_electric_bill() -> None:
+# --- 3. 主程序 ---
+if __name__ == "__main__":
+    print("欢迎使用电费查询配置程序。")
+    print("本程序将引导您登录并选择一个房间，然后将结果保存供 query.py 使用。")
+
     session = requests.Session()
     session.headers.update({
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
         'X-Requested-With': 'XMLHttpRequest'
     })
 
-    if os.path.exists(COOKIE_FILE):
-        load_cookies(session, COOKIE_FILE)
-        print("正在验证已加载的会话...")
-        try:
-            verify_headers = session.headers.copy()
-            del verify_headers['X-Requested-With']
-            verify_response = session.get(VERIFY_LOGIN_URL, headers=verify_headers)
-            verify_response.raise_for_status()
-            if 'j_spring_security_check' in verify_response.text or 'j_username' in verify_response.text:
-                print("会话已失效，需要重新登录。")
-                os.remove(COOKIE_FILE)
-                if not perform_login(session): return
-            else:
-                print("会话验证通过，仍然有效！")
-        except requests.RequestException as e:
-            print(f"会话验证请求失败: {e}，需要重新登录。")
-            if not perform_login(session): return
-    else:
-        if not perform_login(session): return
+    if not perform_login(session):
+        input("按回车键退出。")
+        exit()
 
-    query_payload = None
-    token_page_url = None
+    while True:
+        selected_system = select_electric_system(session)
+        if not selected_system:
+            print("用户在主菜单选择退出，程序结束。")
+            exit()
 
-    cached_selection = load_selection_from_cache(SELECTION_CACHE_FILE)
-    if cached_selection:
-        print("\n--- 检测到有效缓存，将直接使用 ---")
-        sel = cached_selection
-        print(
-            f"缓存信息: {sel['system']['name']} > {sel['area']['name']} > {sel['district']['name']} > {sel['buis']['name']} > {sel['floor']['name']} > {sel['room']['name']}")
-
-        selected_sysid = sel['system']['id']
+        selected_sysid = selected_system['id']
         token_page_url = f'{BASE_DOMAIN}/epay/electric/load4electricbill?elcsysid={selected_sysid}'
+
+        print("\n正在访问电费页面以获取API操作权限...")
+        try:
+            page_headers = session.headers.copy()
+            del page_headers['X-Requested-With']
+            page_headers['Referer'] = LOAD_ELECTRIC_INDEX_URL
+            page_response = session.get(token_page_url, headers=page_headers)
+            page_response.raise_for_status()
+            api_csrf_token = extract_csrf_token(page_response.text)
+            if not api_csrf_token:
+                print("[错误] 无法在电费页面中找到API操作所需的CSRF Token！")
+                continue
+            print("[成功] 获取API操作权限 (CSRF Token)！")
+        except requests.RequestException as e:
+            print(f"[错误] 访问电费页面失败: {e}")
+            continue
+
+        full_selection = interactive_query_flow(session, api_csrf_token, selected_sysid, token_page_url)
+        if not full_selection:
+            print("\n返回主菜单...")
+            continue
+
         query_payload = {
             'sysid': selected_sysid,
-            'elcarea': sel['area']['id'],
-            'elcbuis': sel['buis']['id'],
-            'roomNo': sel['room']['id']
+            'elcarea': full_selection['area']['id'],
+            'elcbuis': full_selection['buis']['id'],
+            'roomNo': full_selection['room']['id']
         }
 
-    if not query_payload:
-        print("\n--- 未找到有效缓存，开始手动选择 ---")
-        while True:
-            selected_system = select_electric_system(session)
-            if not selected_system:
-                print("用户在主菜单选择退出，程序结束。")
-                return
+        full_selection['system'] = selected_system
 
-            selected_sysid = selected_system['id']
-            token_page_url = f'{BASE_DOMAIN}/epay/electric/load4electricbill?elcsysid={selected_sysid}'
-
-            print("\n正在访问电费页面以获取API操作权限...")
-            try:
-                page_headers = session.headers.copy()
-                del page_headers['X-Requested-With']
-                page_headers['Referer'] = LOAD_ELECTRIC_INDEX_URL
-                page_response = session.get(token_page_url, headers=page_headers)
-                page_response.raise_for_status()
-                api_csrf_token = extract_csrf_token(page_response.text)
-                if not api_csrf_token:
-                    print("错误：无法在电费页面中找到API操作所需的CSRF Token！")
-                    continue
-                print("成功获取API操作权限 (CSRF Token)！")
-            except requests.RequestException as e:
-                print(f"访问电费页面失败: {e}")
-                continue
-
-            full_selection = interactive_query_flow(session, api_csrf_token, selected_sysid, token_page_url)
-            if not full_selection:
-                print("\n返回主菜单...")
-                continue
-
-            query_payload = {
-                'sysid': selected_sysid,
-                'elcarea': full_selection['area']['id'],
-                'elcbuis': full_selection['buis']['id'],
-                'roomNo': full_selection['room']['id']
+        print("\n--- 正在验证您的选择并保存配置 ---")
+        try:
+            query_headers = {
+                'X-CSRF-TOKEN': api_csrf_token,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'Referer': token_page_url
             }
+            query_response = session.post(QUERY_URL, data=query_payload, headers=query_headers)
+            query_response.raise_for_status()
+            result = query_response.json()
 
-            full_selection['system'] = selected_system
-            save_selection_to_cache(SELECTION_CACHE_FILE, full_selection)
-            break
-
-    if not query_payload:
-        print("未能确定查询目标，程序退出。")
-        return
-
-    print("\n开始执行电费查询...")
-    try:
-        page_headers = session.headers.copy()
-        del page_headers['X-Requested-With']
-        page_headers['Referer'] = LOAD_ELECTRIC_INDEX_URL
-        page_response = session.get(token_page_url, headers=page_headers)
-        page_response.raise_for_status()
-        final_csrf_token = extract_csrf_token(page_response.text)
-        if not final_csrf_token:
-            print("错误：在最终查询前无法获取CSRF Token！")
-            return
-
-        query_headers = {
-            'X-CSRF-TOKEN': final_csrf_token,
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'Referer': token_page_url
-        }
-        query_response = session.post(QUERY_URL, data=query_payload, headers=query_headers)
-        query_response.raise_for_status()
-        result = query_response.json()
-
-        if result.get('retcode') == 0:
-            if result.get('multiflag'):
-                print("\n========================\n查询成功！(该房间为一房多表模式)")
-                for meter in result.get('elecRoomData', []):
-                    print(f"  - {meter.get('name')}: 剩余电量 {meter.get('restElecDegree')} 度")
-                print("========================")
+            if result.get('retcode') == 0:
+                print("[成功] 您的选择已通过验证！")
+                # 验证成功后，才保存所有配置
+                save_selection_to_cache(SELECTION_CACHE_FILE, full_selection)
+                save_cookies(session, COOKIE_FILE)
+                print("\n所有配置已成功保存！现在您可以使用 query.py 进行快速查询。")
+                break  # 成功，退出主循环
             else:
-                remaining_electricity = result.get('restElecDegree')
-                print("\n========================")
-                print(f"查询成功！剩余电量: {remaining_electricity} 度")
-                print("========================")
-            save_cookies(session, COOKIE_FILE)
-        else:
-            print(f"查询失败: {result.get('retmsg')}")
+                print(f"[错误] 验证失败: {result.get('retmsg')}")
+                input("按回车键返回主菜单...")
+                continue
+        except (requests.RequestException, json.JSONDecodeError, Exception) as e:
+            print(f"[错误] 验证过程中发生错误: {e}")
+            input("按回车键返回主菜单...")
+            continue
 
-    except (requests.RequestException, json.JSONDecodeError, Exception) as e:
-        print(f"查询过程中发生错误: {e}")
-
-
-if __name__ == "__main__":
-    get_electric_bill()
+    input("按回车键退出。")
