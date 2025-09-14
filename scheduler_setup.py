@@ -46,11 +46,12 @@ def setup_windows_scheduler(config_path, python_executable):
             task_command = f'\"{python_executable}\" \"{config_path}\"'  # 注意这里需要转义引号
 
         # 构建schtasks命令
+        # 使用 /ru "SYSTEM" 确保任务在用户未登录时也能运行，这需要管理员权限
         command = [
             "schtasks", "/create", "/tn", task_name,
             "/tr", task_command,
             "/sc", "daily", "/st", f"{hour:02d}:{minute:02d}",
-            "/f"
+            "/ru", "SYSTEM", "/f"
         ]
 
         # 执行命令
@@ -95,20 +96,32 @@ def setup_linux_cron(config_path, python_executable):
         # 构建cron命令
         cron_command = f"{cron_expression} {job_command}"
 
-        # 使用crontab命令添加任务
-        command = f"(crontab -l 2>/dev/null; echo '{cron_command}') | crontab -"
+        # 为了让任务在用户未登录时也能运行，需要将cron任务添加到系统级的crontab中
+        # 这通常需要管理员权限（sudo）
+        cron_file = "/etc/crontab"
+        print(f"将在系统级cron配置文件中添加任务: {cron_file}")
+        print("这需要管理员权限，如果脚本运行失败，请尝试使用 'sudo' 再次运行。")
 
-        result = subprocess.run(command, shell=True, capture_output=True, text=True)
+        # 在系统级的crontab中，需要指定运行任务的用户名，这里我们默认为root
+        cron_command_with_user = f"{cron_expression} root {job_command}"
 
-        if result.returncode == 0:
-            print(f"Linux定时任务创建成功！")
-            print(f"   Cron表达式: {cron_expression}")
-            print(f"   执行命令: {job_command}")
-            return True
-        else:
-            print(f"Linux定时任务创建失败:")
-            print(f"   {result.stderr}")
+        try:
+            with open(cron_file, "a") as f:
+                f.write(f"\n# TJUEcard Auto Query Job\n{cron_command_with_user}\n")
+            result = None  # 表示成功
+        except PermissionError:
+            print(f"权限错误: 无法写入 {cron_file}。请尝试使用 'sudo' 运行此脚本。")
             return False
+        except Exception as e:
+            print(f"写入 {cron_file} 时出错: {e}")
+            return False
+
+        # 检查是否成功写入
+        # 在这个逻辑中，如果前面的 try-except 没有抛出异常，就意味着写入成功了
+        print(f"Linux定时任务创建成功！")
+        print(f"   Cron表达式: {cron_expression}")
+        print(f"   执行命令: {job_command}")
+        return True
 
     except Exception as e:
         print(f"Linux定时任务设置出错: {e}")
@@ -159,8 +172,11 @@ def setup_macos_launchd(config_path, python_executable):
 </dict>
 </plist>'''
 
-        # 保存plist文件
-        plist_path = os.path.expanduser("~/Library/LaunchAgents/com.tjuecard.automatic.plist")
+        # 为了让任务在用户未登录时也能运行，需要将plist文件放在 /Library/LaunchDaemons/
+        # 这需要管理员权限（sudo）
+        plist_path = "/Library/LaunchDaemons/com.tjuecard.automatic.plist"
+        print(f"将在以下路径创建macOS后台任务配置文件: {plist_path}")
+        print("这需要管理员权限，如果脚本运行失败，请尝试使用 'sudo' 再次运行。")
 
         with open(plist_path, 'w') as f:
             f.write(plist_content)

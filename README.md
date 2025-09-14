@@ -32,8 +32,10 @@
 
 3. **定时任务**
 
-   配置成功后，程序会询问您是否自动设置系统定时任务。如果选择是，程序会自动在系统中创建一个每日任务，在每天的同一时间运行
-   `TJUEcard` 程序来查询并发送邮件。
+   配置成功后，程序会询问您是否自动设置系统定时任务。任务将被设置为在每天的固定时间运行 `TJUEcard` 程序来查询并发送邮件。
+
+   > **注意**: 为了让定时任务在用户未登录时也能正常运行，在所有系统上设置时都建议使用 **管理员权限** 。请确保您以管理员身份运行
+   `TJUEcardSetup` 程序（在Windows上右键点击“以管理员身份运行”，在Linux和macOS上使用 `sudo` 命令）。
 
 ## 定时任务管理
 
@@ -44,7 +46,7 @@
 - **查询定时任务**
 
     - **方式一：命令行**
-      打开命令提示符（CMD）或 PowerShell，输入以下命令：
+      打开 **管理员权限** 的命令提示符(cmd)或PowerShell，输入以下命令：
       ```bash
       schtasks /query /tn TJUEcardAutoQuery
       ```
@@ -57,26 +59,41 @@
   schtasks /delete /tn TJUEcardAutoQuery /f
   ```
 
-### Linux / macOS
+### Linux
 
 - **查询定时任务**
 
-  打开终端，输入以下命令查看当前的 `cron` 任务列表：
+  脚本会将定时任务添加到系统级的 `/etc/crontab` 文件中。您可以使用以下命令查看内容：
 
   ```bash
-  crontab -l
+  cat /etc/crontab
   ```
 
 - **取消定时任务**
 
-    1. 打开 `cron` 任务编辑器：
+  您需要以管理员权限编辑 `/etc/crontab` 文件来移除任务。
+
+    1. 使用文本编辑器（如 `nano` 或 `vim`）打开文件：
 
        ```bash
-       crontab -e
+       sudo nano /etc/crontab
        ```
 
-    2. 在编辑器中，找到包含 `TJUEcard` 的那一行，删除它。
+    2. 在编辑器中，找到并删除包含 `TJUEcard` 的那一行。
     3. 保存并退出编辑器。
+
+### macOS
+
+macOS的定时任务是通过 `launchd` 管理的，您设置的任务配置文件位于 `/Library/LaunchDaemons/com.tjuecard.automatic.plist`。
+
+- **停止并卸载任务**
+
+  如果需要停止并删除定时任务，请在终端中运行以下命令（需要 `sudo` 权限）：
+
+  ```bash
+  sudo launchctl unload /Library/LaunchDaemons/com.tjuecard.automatic.plist
+  sudo rm /Library/LaunchDaemons/com.tjuecard.automatic.plist
+  ```
 
 ## 注意事项
 
