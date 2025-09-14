@@ -52,7 +52,7 @@
   schtasks /delete /tn TJUEcardAutoQuery /f
   ```
 
-### Linux / macOS
+### Linux
 
 - **查询定时任务**
 
@@ -72,6 +72,36 @@
 
     2. 在编辑器中，找到包含 `TJUEcard` 的那一行，删除它。
     3. 保存并退出编辑器。
+
+### macOS
+
+- **查询定时任务**
+
+  打开终端，输入以下命令查看当前 root 用户的 `LaunchAgent` 任务列表：
+
+  ```zsh
+  sudo launchctl list
+  ```
+
+- **取消定时任务**
+
+    1. 使用 `launchctl bootout` 命令停止并移除任务：
+
+       ```zsh
+       sudo launchctl bootout system /Library/LaunchDaemons/com.tjuecard.automatic.plist
+       ```
+
+    2. 找到对应的配置文件并删除：
+    
+       ``` zsh
+    sudo rm ~/Library/LaunchAgents/com.tjuecard.automatic.plist
+       ```
+    
+    3. 验证是否已移除
+    
+       ``` zsh
+       sudo launchctl list | grep TJUEcard
+       ```
 
 ## 注意事项
 
