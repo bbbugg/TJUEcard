@@ -6,6 +6,7 @@ import json
 import os
 from send_email import send_notification_email
 from scheduler_setup import setup_system_scheduler
+from getpass import getpass
 
 # 导入工具函数和配置
 from utils import save_cookies, load_cookies, extract_csrf_token, load_config
@@ -35,7 +36,7 @@ def perform_login(session) -> tuple[str | None, str | None]:
     # 循环直到登录成功
     while True:
         username = input("请输入用户名: ")
-        password = input("请输入密码: ")
+        password = getpass("请输入密码: ")
         login_data = {'j_username': username, 'j_password': password, '_csrf': csrf_token}
         try:
             headers = {'Referer': LOGIN_PAGE_URL, 'Origin': BASE_DOMAIN}
@@ -221,7 +222,7 @@ if __name__ == "__main__":
         print(
             "163邮箱：请前往163邮箱 -> 设置 -> POP3/SMTP/IMAP -> 开启“IMAP/SMTP服务”，生成授权码获取。")
         user_email = input("请输入您的邮箱: ")
-        user_auth_code = input("请输入您的邮箱授权码: ")
+        user_auth_code = getpass("请输入您的邮箱授权码: ")
 
         if not user_email or not user_auth_code:
             print("[警告] 您未输入邮箱或授权码，将无法使用邮件通知功能。")
