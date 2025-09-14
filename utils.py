@@ -25,10 +25,15 @@ def setup_logger(logger_name='TJUEcardLogger'):
 
     # 检查是否已经有处理器，避免重复添加
     if not logger.handlers:
-        file_handler = logging.FileHandler(LOG_FILE, encoding='utf-8')
-        formatter = logging.Formatter(LOG_FORMAT, datefmt=LOG_DATE_FORMAT)
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+        try:
+            file_handler = logging.FileHandler(LOG_FILE, encoding='utf-8')
+            formatter = logging.Formatter(LOG_FORMAT, datefmt=LOG_DATE_FORMAT)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+        except PermissionError:
+            print(f"[错误] 权限不足，无法在 '{LOG_FILE}' 创建日志文件。")
+            print("请尝试以管理员身份运行程序。")
+            exit(1)
 
     return logger
 

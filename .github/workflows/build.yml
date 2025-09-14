@@ -140,6 +140,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
+          generate_release_notes: true # 自动生成发布日志
           files: |
             dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.${{ runner.os == 'Windows' && 'zip' || 'tar.gz' }}
             dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.${{ runner.os == 'Windows' && 'zip.sha256' || 'tar.gz.sha256' }}
