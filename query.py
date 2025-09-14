@@ -10,7 +10,7 @@ from config import (
 )
 
 # --- 1. 日志配置 ---
-logger = setup_logger('TjuEcardQuery')
+logger = setup_logger('TJUEcardQuery')
 
 
 # --- 2. 核心功能函数 ---

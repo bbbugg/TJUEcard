@@ -13,7 +13,7 @@ from config import LOG_FILE, LOG_FORMAT, LOG_DATE_FORMAT
 
 
 # 日志配置函数
-def setup_logger(logger_name='TjuEcardLogger'):
+def setup_logger(logger_name='TJUEcardLogger'):
     """
     配置并返回日志记录器
     

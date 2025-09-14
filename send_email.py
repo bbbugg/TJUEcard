@@ -21,7 +21,7 @@ def send_notification_email(sender_email: str, auth_code: str, recipient_email: 
         # 创建邮件内容
         msg = MIMEText(body, 'plain', 'utf-8')
         # 设置邮件头部信息
-        msg['From'] = formataddr(["TjuEcard电费查询助手", sender_email])  # 发件人昵称和账号
+        msg['From'] = formataddr(["TJUEcard电费查询助手", sender_email])  # 发件人昵称和账号
         msg['To'] = formataddr(["用户", recipient_email])  # 收件人昵称和账号
         msg['Subject'] = subject  # 邮件主题
 
