@@ -40,7 +40,7 @@ def setup_windows_scheduler(config_path, python_executable):
             executable_path = os.path.abspath(sys.executable)
             executable_dir = os.path.dirname(executable_path)
             main_executable = os.path.join(executable_dir, 'TJUEcard.exe')
-            task_command = f'\"{main_executable}\"'  # 注意这里需要转义引号
+            task_command = f'\"{main_executable}\"'
         else:
             # 作为脚本运行
             task_command = f'\"{python_executable}\" \"{config_path}\"'  # 注意这里需要转义引号
@@ -57,17 +57,17 @@ def setup_windows_scheduler(config_path, python_executable):
         result = subprocess.run(command, capture_output=True, text=True)
 
         if result.returncode == 0:
-            print(f"✅ Windows定时任务创建成功！")
+            print(f"Windows定时任务创建成功！")
             print(f"   执行时间: 每天 {hour:02d}:{minute:02d}")
-            print(f"   执行命令: {python_executable} {config_path}")
+            print(f"   执行命令: {task_command}")
             return True
         else:
-            print(f"❌ Windows定时任务创建失败:")
+            print(f"Windows定时任务创建失败:")
             print(f"   {result.stderr}")
             return False
 
     except Exception as e:
-        print(f"❌ Windows定时任务设置出错: {e}")
+        print(f"Windows定时任务设置出错: {e}")
         return False
 
 
@@ -101,17 +101,17 @@ def setup_linux_cron(config_path, python_executable):
         result = subprocess.run(command, shell=True, capture_output=True, text=True)
 
         if result.returncode == 0:
-            print(f"✅ Linux定时任务创建成功！")
+            print(f"Linux定时任务创建成功！")
             print(f"   Cron表达式: {cron_expression}")
-            print(f"   执行命令: {python_executable} {config_path}")
+            print(f"   执行命令: {job_command}")
             return True
         else:
-            print(f"❌ Linux定时任务创建失败:")
+            print(f"Linux定时任务创建失败:")
             print(f"   {result.stderr}")
             return False
 
     except Exception as e:
-        print(f"❌ Linux定时任务设置出错: {e}")
+        print(f"Linux定时任务设置出错: {e}")
         return False
 
 
@@ -122,6 +122,20 @@ def setup_macos_launchd(config_path, python_executable):
         hour = current_time.hour
         minute = current_time.minute
 
+        # 确定要执行的命令
+        if getattr(sys, 'frozen', False):
+            # 打包后的可执行文件
+            executable_path = os.path.abspath(sys.executable)
+            executable_dir = os.path.dirname(executable_path)
+            main_executable = os.path.join(executable_dir, 'TJUEcard')
+            program_arguments = f'<string>{main_executable}</string>'
+            task_command = f'\"{main_executable}\"'
+        else:
+            # 作为脚本运行
+            main_py_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'main.py'))
+            program_arguments = f'<string>{python_executable}</string>\n        <string>{main_py_path}</string>'
+            task_command = f'\"{python_executable}\" \"{main_py_path}\"' 
+
         # 创建plist文件内容
         plist_content = f'''<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -131,8 +145,7 @@ def setup_macos_launchd(config_path, python_executable):
     <string>com.tjuecard.automatic</string>
     <key>ProgramArguments</key>
     <array>
-        <string>{python_executable}</string>
-        <string>{config_path}</string>
+{program_arguments}
     </array>
     <key>StartCalendarInterval</key>
     <dict>
@@ -157,23 +170,23 @@ def setup_macos_launchd(config_path, python_executable):
         result = subprocess.run(command, capture_output=True, text=True)
 
         if result.returncode == 0:
-            print(f"✅ macOS定时任务创建成功！")
+            print(f"macOS定时任务创建成功！")
             print(f"   执行时间: 每天 {hour:02d}:{minute:02d}")
-            print(f"   执行命令: {python_executable} {config_path}")
+            print(f"   执行命令: {task_command}")
             return True
         else:
-            print(f"❌ macOS定时任务创建失败:")
+            print(f"macOS定时任务创建失败:")
             print(f"   {result.stderr}")
             return False
 
     except Exception as e:
-        print(f"❌ macOS定时任务设置出错: {e}")
+        print(f"macOS定时任务设置出错: {e}")
         return False
 
 
 def setup_system_scheduler():
     """自动设置系统级定时任务"""
-    print("🚀 开始设置系统定时任务...")
+    print("开始设置系统定时任务...")
 
     # 获取当前平台
     current_platform = get_platform_type()
