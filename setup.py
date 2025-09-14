@@ -211,7 +211,7 @@ if __name__ == "__main__":
         input("按回车键退出。")
         exit()
 
-    # 【新增】循环以允许用户在邮件测试失败后重试
+    # 循环以允许用户在邮件测试失败后重试
     email_configured = False
     while not email_configured:
         print("\n--- 邮件通知配置 ---")

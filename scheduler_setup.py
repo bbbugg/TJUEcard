@@ -190,14 +190,14 @@ def setup_system_scheduler():
 
     # 获取当前平台
     current_platform = get_platform_type()
-    print(f"📋 检测到操作系统: {current_platform}")
+    print(f"检测到操作系统: {current_platform}")
 
     # 获取Python可执行文件和配置文件路径
     python_executable = sys.executable
     config_path = os.path.abspath("main.py")
 
-    print(f"🐍 Python路径: {python_executable}")
-    print(f"📁 执行文件: {config_path}")
+    print(f"Python路径: {python_executable}")
+    print(f"执行文件: {config_path}")
 
     # 根据平台调用相应的设置函数
     success = False
@@ -209,16 +209,16 @@ def setup_system_scheduler():
     elif current_platform == "macos":
         success = setup_macos_launchd(config_path, python_executable)
     else:
-        print("❌ 不支持的操作系统类型")
+        print("[错误] 不支持的操作系统类型")
         return False
 
     if success:
-        print("\n🎉 定时任务设置完成！")
-        print("💡 程序将在每天同一时间自动运行")
-        print("📋 您可以在系统任务计划中查看和管理定时任务")
+        print("\n定时任务设置完成！")
+        print("程序将在每天同一时间自动运行")
+        print("您可以在系统任务计划中查看和管理定时任务")
     else:
-        print("\n❌ 定时任务设置失败")
-        print("💡 请检查系统权限或手动设置定时任务")
+        print("\n[错误] 定时任务设置失败")
+        print("请检查系统权限或手动设置定时任务")
 
     return success
 

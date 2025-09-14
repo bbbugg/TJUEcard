@@ -57,7 +57,7 @@ def handle_relogin(session: requests.Session, config: dict) -> bool:
         print(f"[错误] {msg}")
         logger.error(msg)
         print(f"\n[操作建议] 请重新运行 setup 更新您的配置。")
-        send_query_email(config, "【警告】电费查询失败通知", msg, -1)
+        send_query_email(config, "[警告] 电费查询失败通知", msg, -1)
         logger.info("--- 查询脚本运行结束 ---\n")
         sys.exit(1)
 
@@ -202,7 +202,6 @@ if __name__ == "__main__":
 
                 if attempt == 0:  # 如果是第一次尝试，则进行重连
                     print("[信息] 正在触发自动重连...")
-                    # 【关键修改】第二次调用新的重连函数
                     if handle_relogin(session, config):
                         print("[信息] 重连成功，正在重试查询...")
                         logger.info("重连成功，重试查询。")
@@ -279,7 +278,7 @@ if __name__ == "__main__":
     if query_successful:
         send_query_email(config, "电费查询成功通知", final_message, current_elec)
     else:
-        send_query_email(config, "【警告】电费查询失败通知", final_message, -1)
+        send_query_email(config, "[警告] 电费查询失败通知", final_message, -1)
         print("\n[操作建议] 请检查网络或运行 setup 刷新配置。")
 
     logger.info("--- 查询脚本运行结束 ---\n")
