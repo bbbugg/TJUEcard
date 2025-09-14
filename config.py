@@ -33,8 +33,8 @@ KEY_MAP = {
 }
 
 # 文件路径配置
-USER_CONFIG_FILE = 'user_config.json'
-COOKIE_FILE = 'my_session.pkl'
+USER_CONFIG_FILE = 'TJUEcard_user_config.json'
+COOKIE_FILE = 'TJUEcard_session.pkl'
 LOG_FILE = 'TJUEcard.log'
 
 # HTTP请求头配置

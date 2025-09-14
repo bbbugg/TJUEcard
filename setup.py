@@ -196,7 +196,7 @@ def save_config_to_json(filename: str, config_data: dict):
 if __name__ == "__main__":
     print("欢迎使用电费查询配置程序 (setup.py)。")
     print("本程序将引导您登录、选择房间并配置邮件提醒。")
-    print("\n注意：您的密码和邮箱授权码将以明文形式保存在 user_config.json 文件中，请妥善保管此文件。")
+    print("\n注意：您的密码和邮箱授权码将以明文形式保存在 TJUEcard_user_config.json 文件中，请妥善保管此文件。")
 
     session = requests.Session()
     session.headers.update({
