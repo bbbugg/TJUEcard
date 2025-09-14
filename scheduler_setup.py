@@ -1,13 +1,8 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import os
 import sys
 import platform
 import subprocess
-import json
 from datetime import datetime
-from pathlib import Path
 
 
 def get_platform_type():
