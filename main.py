@@ -56,10 +56,9 @@ def handle_relogin(session: requests.Session, config: dict) -> bool:
         msg = "配置文件中缺少登录凭据，无法自动登录。"
         print(f"[错误] {msg}")
         logger.error(msg)
-        logger.info("--- 查询脚本运行结束 ---\n")
         print(f"\n[操作建议] 请重新运行 setup.py 更新您的配置。")
         send_query_email(config, "【警告】电费查询失败通知", msg, -1)
-        input("按回车键退出。")
+        logger.info("--- 查询脚本运行结束 ---\n")
         sys.exit(1)
 
     # 2. 尝试登录
@@ -74,10 +73,9 @@ def handle_relogin(session: requests.Session, config: dict) -> bool:
         msg = "自动重新登录失败。保存的密码可能已更改。"
         print(f"[错误] {msg}")
         logger.error(msg)
-        logger.info("--- 查询脚本运行结束 ---\n")
         print(f"\n[操作建议] 请重新运行 setup.py 更新您的配置。")
         send_query_email(config, "【警告】电费查询失败通知", msg, -1)
-        input("按回车键退出。")
+        logger.info("--- 查询脚本运行结束 ---\n")
         sys.exit(1)
 
 
@@ -132,9 +130,8 @@ if __name__ == "__main__":
     if not config:
         msg = "因配置文件中房间参数无效或不存在，脚本退出。"
         logger.error(msg)
-        logger.info("--- 查询脚本运行结束 ---\n")
         print(f"\n[操作建议] 请先运行 setup.py 来生成 {USER_CONFIG_FILE}。")
-        input("按回车键退出。")
+        logger.info("--- 查询脚本运行结束 ---\n")
         sys.exit(1)
 
     selection = config['selection']
@@ -286,4 +283,3 @@ if __name__ == "__main__":
         print("\n[操作建议] 请检查网络或运行 setup.py 刷新配置。")
 
     logger.info("--- 查询脚本运行结束 ---\n")
-    input("\n查询结束，按回车键退出。")
