@@ -1,52 +1,22 @@
 import requests
 from bs4 import BeautifulSoup
-import pickle
-import os
 import time
 import json
+import os
 from send_email import send_notification_email
 
-# --- 1. 配置区 ---
-BASE_DOMAIN = 'http://59.67.37.10:8180'
-USER_CONFIG_FILE = 'user_config.json'
-LOAD_ELECTRIC_INDEX_URL = f'{BASE_DOMAIN}/epay/electric/load4electricindex'
-LOGIN_URL = f'{BASE_DOMAIN}/epay/j_spring_security_check'
-QUERY_URL = f'{BASE_DOMAIN}/epay/electric/queryelectricbill'
-COOKIE_FILE = 'my_session.pkl'
-LOGIN_PAGE_URL = f'{BASE_DOMAIN}/epay/person/index'
-API_BASE_URL = f'{BASE_DOMAIN}/epay/electric'
-API_URLS = {
-    'area': f'{API_BASE_URL}/queryelectricarea',
-    'district': f'{API_BASE_URL}/queryelectricdistricts',
-    'buis': f'{API_BASE_URL}/queryelectricbuis',
-    'floor': f'{API_BASE_URL}/queryelectricfloors',
-    'room': f'{API_BASE_URL}/queryelectricrooms'
-}
-KEY_MAP = {
-    'area': {'list': 'areas', 'id': 'areaId', 'name': 'areaName'},
-    'district': {'list': 'districts', 'id': 'districtId', 'name': 'districtName'},
-    'buis': {'list': 'buils', 'id': 'buiId', 'name': 'buiName'},
-    'floor': {'list': 'floors', 'id': 'floorId', 'name': 'floorName'},
-    'room': {'list': 'rooms', 'id': 'roomId', 'name': 'roomName'},
-}
+# 导入工具函数和配置
+from utils import save_cookies, load_cookies, extract_csrf_token, load_config
+from config import (
+    BASE_DOMAIN, USER_CONFIG_FILE, LOAD_ELECTRIC_INDEX_URL, LOGIN_URL,
+    QUERY_URL, COOKIE_FILE, LOGIN_PAGE_URL, API_BASE_URL, API_URLS, KEY_MAP
+)
 
 
-# --- 2. 核心功能函数 ---
-def save_cookies(session: requests.Session, file_name: str) -> None:
-    with open(file_name, 'wb') as file: pickle.dump(session.cookies, file)
-    print(f"\n[成功] 新的会话已成功保存到 {file_name}")
+# --- 1. 核心功能函数 ---
 
 
-def extract_csrf_token(html_content: str) -> str | None:
-    soup = BeautifulSoup(html_content, 'html.parser')
-    csrf_meta_tag = soup.find('meta', {'name': '_csrf'})
-    if csrf_meta_tag and csrf_meta_tag.has_attr('content'):
-        return csrf_meta_tag['content']
-    return None
-
-
-def perform_login(session: requests.Session) -> tuple[str | None, str | None]:
-    print("--- 开始强制登录流程 ---")
+def perform_login(session) -> tuple[str | None, str | None]:
     try:
         page_response = session.get(LOGIN_PAGE_URL)
         page_response.raise_for_status()
@@ -60,21 +30,27 @@ def perform_login(session: requests.Session) -> tuple[str | None, str | None]:
         print(f"[错误] 访问登录页面失败: {e}")
         return None, None
 
-    username = input("请输入用户名: ")
-    password = input("请输入密码: ")
-    login_data = {'j_username': username, 'j_password': password, '_csrf': csrf_token}
-    try:
-        headers = {'Referer': LOGIN_PAGE_URL, 'Origin': BASE_DOMAIN}
-        response = session.post(LOGIN_URL, data=login_data, headers=headers)
-        response.raise_for_status()
-        if '<frameset' not in response.text:
-            print("[错误] 登录失败！请检查用户名或密码。")
-            return None, None
-        print("[成功] 登录成功！")
-        return username, password
-    except requests.RequestException as e:
-        print(f"[错误] 登录请求失败: {e}")
-        return None, None
+    # 循环直到登录成功
+    while True:
+        username = input("请输入用户名: ")
+        password = input("请输入密码: ")
+        login_data = {'j_username': username, 'j_password': password, '_csrf': csrf_token}
+        try:
+            headers = {'Referer': LOGIN_PAGE_URL, 'Origin': BASE_DOMAIN}
+            response = session.post(LOGIN_URL, data=login_data, headers=headers)
+            response.raise_for_status()
+            if '<frameset' not in response.text:
+                print("[错误] 登录失败！请检查用户名或密码。")
+                print("[提示] 将重新尝试登录...")
+                # 继续循环，再次尝试登录
+                continue
+            print("[成功] 登录成功！")
+            return username, password
+        except requests.RequestException as e:
+            print(f"[错误] 登录请求失败: {e}")
+            print("[提示] 将重新尝试登录...")
+            # 继续循环，再次尝试登录
+            continue
 
 def get_user_choice(options: list) -> dict | None:
     if not options:
@@ -86,7 +62,8 @@ def get_user_choice(options: list) -> dict | None:
         try:
             choice = int(input("请输入您的选择 (数字): "))
             if 0 <= choice <= len(options):
-                if choice == 0: return None
+                if choice == 0:
+                    return None
                 return options[choice - 1]
             else:
                 print("无效的输入，请输入列表中的数字。")
@@ -106,7 +83,8 @@ def fetch_options(session: requests.Session, level: str, payload: dict, csrf_tok
         try:
             data = response.json()
         except json.JSONDecodeError:
-            print(f"[错误] 服务器在请求 '{level}' 列表时没有返回有效的JSON。")
+            error_msg = f"服务器在请求 '{level}' 列表时没有返回有效的JSON"
+            print(f"[错误] {error_msg}")
             return []
         raw_list = data.get(map_keys['list'], [])
         for item in raw_list:
@@ -237,9 +215,9 @@ if __name__ == "__main__":
         print("\n--- 邮件通知配置 ---")
         print("您需要提供一个QQ邮箱或163邮箱用于接收通知，以及该邮箱的SMTP授权码。")
         print(
-            "授权码不是您的QQ密码，请前往QQ邮箱 -> 设置 -> 账号与安全 -> 安全设置 -> 开启“POP3/IMAP/SMTP/Exchange/CardDAV 服务” -> 生成授权码获取。")
+            "QQ邮箱：请前往QQ邮箱 -> 设置 -> 账号与安全 -> 安全设置 -> 开启“POP3/IMAP/SMTP/Exchange/CardDAV 服务” -> 生成授权码获取。")
         print(
-            "或者请前往163邮箱 -> 设置 -> POP3/SMTP/IMAP -> 开启“IMAP/SMTP服务”，生成授权码获取。")
+            "163邮箱：请前往163邮箱 -> 设置 -> POP3/SMTP/IMAP -> 开启“IMAP/SMTP服务”，生成授权码获取。")
         user_email = input("请输入您的邮箱: ")
         user_auth_code = input("请输入您的邮箱授权码: ")
 
@@ -349,6 +327,35 @@ if __name__ == "__main__":
                         "email": user_email,
                         "auth_code": user_auth_code
                     }
+                    # 添加电费通知阈值设置
+                    print("\n--- 电费通知阈值设置 ---")
+                    print("设置后，只有当剩余电量小于等于阈值时才会发送邮件通知。")
+                    print("如果不设置，每次查询都会发送邮件通知。")
+                    set_threshold = input("是否需要设置电费通知阈值？(y/n): ").strip().lower()
+
+                    if set_threshold == 'y':
+                        while True:
+                            try:
+                                threshold_input = input("请输入电量阈值（单位：度，0-1024，最多两位小数）: ")
+                                # 检查输入是否为数字且最多两位小数
+                                threshold = float(threshold_input)
+                                # 验证范围
+                                if 0 <= threshold <= 1024:
+                                    # 检查小数位数
+                                    if '.' in threshold_input and len(threshold_input.split('.')[1]) > 2:
+                                        print("[错误] 最多只能输入两位小数。")
+                                        continue
+                                    config_data["email_notifier"]["notification_threshold"] = threshold
+                                    print(f"[成功] 已设置电费通知阈值: {threshold} 度")
+                                    break
+                                else:
+                                    print("[错误] 电量阈值必须在0到1024之间。")
+                            except ValueError:
+                                print("[错误] 请输入有效的数字。")
+                    else:
+                        # 不设置阈值，保存-1
+                        config_data["email_notifier"]["notification_threshold"] = -1
+                        print("[成功] 未设置电费通知阈值，每次查询都会发送邮件。")
 
                 # 验证成功后，才保存所有配置
                 save_config_to_json(USER_CONFIG_FILE, config_data)

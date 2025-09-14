@@ -1,104 +1,35 @@
-import requests
-import pickle
-import os
 import json
+import requests
 import sys
-import logging
 from bs4 import BeautifulSoup
 from send_email import send_notification_email
+from utils import save_cookies, load_cookies, extract_csrf_token, load_config, setup_logger
+from config import (
+    BASE_DOMAIN, USER_CONFIG_FILE, QUERY_URL, COOKIE_FILE, VERIFY_LOGIN_URL,
+    LOGIN_PAGE_URL, LOGIN_URL, LOAD_ELECTRIC_INDEX_URL, DEFAULT_HEADERS
+)
 
 # --- 1. 日志配置 ---
-logger = logging.getLogger('TjuEcardQuery')
-logger.setLevel(logging.INFO)
-file_handler = logging.FileHandler('TjuEcard.log', encoding='utf-8')
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-file_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-
-# --- 2. 用户配置区 ---
-BASE_DOMAIN = 'http://59.67.37.10:8180'
-USER_CONFIG_FILE = 'user_config.json'
-QUERY_URL = f'{BASE_DOMAIN}/epay/electric/queryelectricbill'
-COOKIE_FILE = 'my_session.pkl'
-VERIFY_LOGIN_URL = f'{BASE_DOMAIN}/epay/person/index'
-LOGIN_PAGE_URL = f'{BASE_DOMAIN}/epay/person/index'
-LOGIN_URL = f'{BASE_DOMAIN}/epay/j_spring_security_check'
-LOAD_ELECTRIC_INDEX_URL = f'{BASE_DOMAIN}/epay/electric/load4electricindex'
+logger = setup_logger('TjuEcardQuery')
 
 
-# --- 3. 核心功能函数 ---
-def save_cookies(session: requests.Session, file_name: str) -> None:
-    with open(file_name, 'wb') as file: pickle.dump(session.cookies, file)
-    print(f"[信息] 新的会话已保存到 {file_name}")
-
-
-def load_cookies(session: requests.Session, file_name: str) -> bool:
-    if not os.path.exists(file_name):
-        return False
-    with open(file_name, 'rb') as file:
-        session.cookies.update(pickle.load(file))
-    print("[信息] 已从本地加载会话。")
-    return True
-
-
-def extract_csrf_token(html_content: str) -> str | None:
-    soup = BeautifulSoup(html_content, 'html.parser')
-    csrf_meta_tag = soup.find('meta', {'name': '_csrf'})
-    if csrf_meta_tag and csrf_meta_tag.has_attr('content'):
-        return csrf_meta_tag['content']
-    return None
-
-
-def load_config(filename: str) -> dict | None:
-    print("[信息] 正在读取用户配置文件...")
-    try:
-        with open(filename, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-    except FileNotFoundError:
-        msg = f"配置文件 '{filename}' 不存在。"
-        print(f"[错误] {msg}")
-        logger.error(msg)
-        return None
-    except json.JSONDecodeError:
-        msg = f"配置文件 '{filename}' 格式错误，不是有效的JSON。"
-        print(f"[错误] {msg}")
-        logger.error(msg)
-        return None
-
-    if "selection" not in data:
-        print("[错误] 配置文件缺少'selection'部分。")
-        return None
-
-    required_keys = ['system', 'area', 'district', 'buis', 'floor', 'room']
-    for key in required_keys:
-        msg = ""
-        if key not in data["selection"]:
-            msg = f"配置文件校验失败：缺少顶级键 '{key}'。"
-        elif not isinstance(data["selection"].get(key), dict) or 'id' not in data["selection"].get(key):
-            msg = f"配置文件校验失败：'{key}' 的内容格式不正确。"
-        elif not data["selection"].get(key)['id']:
-            msg = f"配置文件校验失败：'{key}' 的 'id' 不能为空。"
-
-        if msg:
-            print(f"[错误] {msg}")
-            logger.error(msg)
-            return None
-
-    print("[成功] 配置文件校验通过。")
-    return data
+# --- 2. 核心功能函数 ---
 
 
 def perform_auto_login(session: requests.Session, username: str, password: str) -> bool:
     print("[信息] 正在尝试自动重新登录...")
+    logger.info("尝试自动重新登录")
     try:
         page_response = session.get(LOGIN_PAGE_URL)
         page_response.raise_for_status()
         soup = BeautifulSoup(page_response.text, 'html.parser')
         csrf_input_tag = soup.find('input', {'name': '_csrf'})
         if not csrf_input_tag or not csrf_input_tag.has_attr('value'):
+            logger.error("在登录页面中未找到CSRF token")
             return False
         csrf_token = csrf_input_tag['value']
-    except requests.RequestException:
+    except requests.RequestException as e:
+        logger.error(f"访问登录页面失败: {e}")
         return False
 
     login_data = {'j_username': username, 'j_password': password, '_csrf': csrf_token}
@@ -107,17 +38,19 @@ def perform_auto_login(session: requests.Session, username: str, password: str) 
         response = session.post(LOGIN_URL, data=login_data, headers=headers)
         response.raise_for_status()
         if '<frameset' not in response.text:
+            logger.error("登录失败，服务器返回的页面不包含预期内容")
             return False
         print("[成功] 自动重新登录成功！")
+        logger.info("自动重新登录成功")
         return True
-    except requests.RequestException:
+    except requests.RequestException as e:
+        logger.error(f"登录请求失败: {e}")
         return False
 
 
-# ==============================================================================
-# 【新增】这是我们封装的新函数，用于处理重连逻辑
-# ==============================================================================
+# 处理重连逻辑
 def handle_relogin(session: requests.Session, config: dict) -> bool:
+    logger.info("开始处理重连逻辑")
     if "credentials" not in config or "username" not in config["credentials"] or "password" not in config[
         "credentials"]:
         msg = "配置文件中缺少登录凭据，无法自动登录。"
@@ -125,14 +58,16 @@ def handle_relogin(session: requests.Session, config: dict) -> bool:
         logger.error(msg)
         logger.info("--- 查询脚本运行结束 ---\n")
         print(f"\n[操作建议] 请重新运行 setup.py 更新您的配置。")
-        send_query_email(config, "【警告】电费查询失败通知", msg)
+        send_query_email(config, "【警告】电费查询失败通知", msg, -1)
         input("按回车键退出。")
         sys.exit(1)
 
     # 2. 尝试登录
     credentials = config['credentials']
+    logger.debug(f"使用用户名 {credentials['username']} 尝试自动登录")
     if perform_auto_login(session, credentials['username'], credentials['password']):
         save_cookies(session, COOKIE_FILE)
+        logger.info("重连成功并保存新的会话")
         return True
     else:
         # 3. 处理登录失败
@@ -141,13 +76,13 @@ def handle_relogin(session: requests.Session, config: dict) -> bool:
         logger.error(msg)
         logger.info("--- 查询脚本运行结束 ---\n")
         print(f"\n[操作建议] 请重新运行 setup.py 更新您的配置。")
-        send_query_email(config, "【警告】电费查询失败通知", msg)
+        send_query_email(config, "【警告】电费查询失败通知", msg, -1)
         input("按回车键退出。")
         sys.exit(1)
 
 
 # 一个辅助函数，用于发送查询结果邮件
-def send_query_email(config: dict, subject: str, body: str):
+def send_query_email(config: dict, subject: str, body: str, current_electricity: float):
     """检查配置并发送邮件，如果未配置则静默跳过。"""
     if not config:
         logger.warning("尝试发送邮件，但传入的config为None。")
@@ -156,6 +91,17 @@ def send_query_email(config: dict, subject: str, body: str):
     if "email_notifier" in config and config["email_notifier"].get("email") and config["email_notifier"].get(
             "auth_code"):
         notifier_config = config["email_notifier"]
+
+        # 检查是否设置了通知阈值
+        threshold = notifier_config.get("notification_threshold", -1)
+
+        # 判断是否需要发送邮件
+        if threshold >= 0 and current_electricity > threshold:
+            # 当前电量高于阈值且不是失败通知，则不发送邮件
+            logger.info(f"剩余电量({current_electricity}度)高于设置的通知阈值({threshold}度)，不发送邮件。")
+            print(f"[信息] 剩余电量({current_electricity}度)高于设置的通知阈值({threshold}度)，不发送邮件。")
+            return
+
         print("[信息] 正在发送邮件通知...")
         success, error_msg = send_notification_email(
             sender_email=notifier_config["email"],
@@ -165,17 +111,18 @@ def send_query_email(config: dict, subject: str, body: str):
             body=body
         )
         if success:
-            logger.info(f"邮件通知发送成功到{notifier_config["email"]}。")
+            logger.info(f"邮件通知发送成功到{notifier_config['email']}。")
             print("[成功] 邮件通知发送成功。")
         else:
             print(f"[警告] 邮件通知发送失败，请检查 setup.py 中的邮箱配置。")
-            logger.error(f"邮件通知发送失败到{notifier_config["email"]}。错误信息: {error_msg}")
+            logger.error(f"邮件通知发送失败到{notifier_config['email']}。错误信息: {error_msg}")
+            logger.debug(
+                f"发送邮件详细信息: 发件人={notifier_config['email']}, 收件人={notifier_config['email']}, 主题={subject}")
     else:
         logger.info("未配置邮箱通知，跳过发送邮件。")
         # 如果配置文件中没有邮箱信息，则不执行任何操作
         pass
 
-# ==============================================================================
 
 # --- 4. 主程序 ---
 if __name__ == "__main__":
@@ -208,11 +155,14 @@ if __name__ == "__main__":
             verify_response.raise_for_status()
             if 'j_spring_security_check' not in verify_response.text and 'j_username' not in verify_response.text:
                 print("[成功] 会话验证通过。")
+                logger.info("会话验证通过")
                 is_session_valid = True
             else:
                 print("[警告] 会话已过期。")
-        except requests.RequestException:
+                logger.warning("会话已过期")
+        except requests.RequestException as e:
             print("[警告] 会话验证请求失败。")
+            logger.warning(f"会话验证请求失败: {e}")
 
     if not is_session_valid:
         print("[信息] 会话无效或不存在，尝试使用配置文件自动登录...")
@@ -236,6 +186,7 @@ if __name__ == "__main__":
 
     query_successful = False
     final_message = ""  # 用于邮件内容
+    remaining_electricity = None  # 初始化剩余电量变量
 
     for attempt in range(2):
         try:
@@ -275,7 +226,7 @@ if __name__ == "__main__":
             query_response.raise_for_status()
             result = query_response.json()
 
-        # 显示并记录结果
+            # 显示并记录结果
             if result.get('retcode') == 0:
                 result_text = ""
                 if result.get('multiflag'):
@@ -287,8 +238,10 @@ if __name__ == "__main__":
                         meter_results.append(line.strip())
                     print("========================")
                     result_text = " | ".join(meter_results)
+                    current_elec = float(result.get('elecRoomData', [{}])[0].get('restElecDegree', 0))
                 else:
                     remaining_electricity = result.get('restElecDegree')
+                    current_elec = float(remaining_electricity)
                     print("\n========================")
                     print(f"查询成功！剩余电量: {remaining_electricity} 度")
                     print("========================")
@@ -313,16 +266,23 @@ if __name__ == "__main__":
 
         except (requests.RequestException, json.JSONDecodeError, Exception) as e:
             msg = f"查询过程中发生错误: {e}"
-            print(msg)
+            print(f"[错误] {msg}")
             logger.error(f"{msg} | 查询房间: {room_path} | 查询参数: {query_payload}")
             final_message = f"查询房间: {room_path}\n\n查询脚本在执行过程中遇到一个错误: {e}"
+            if attempt == 0 and isinstance(e, requests.RequestException):
+                print("[信息] 网络错误，尝试重新连接...")
+                logger.info("网络错误，尝试重新连接")
+                if handle_relogin(session, config):
+                    print("[信息] 重连成功，重试查询...")
+                    logger.info("重连成功，重试查询")
+                    continue
             break  # 发生异常，无需重试
 
-    # 【修改】无论成功失败，都在最后发送邮件
+    # 无论成功失败，都在最后发送邮件
     if query_successful:
-        send_query_email(config, "电费查询成功通知", final_message)
+        send_query_email(config, "电费查询成功通知", final_message, current_elec)
     else:
-        send_query_email(config, "【警告】电费查询失败通知", final_message)
+        send_query_email(config, "【警告】电费查询失败通知", final_message, -1)
         print("\n[操作建议] 请检查网络或运行 setup.py 刷新配置。")
 
     logger.info("--- 查询脚本运行结束 ---\n")
