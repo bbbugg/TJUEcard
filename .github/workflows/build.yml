@@ -127,9 +127,9 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           Set-Location dist
-          certutil -hashfile "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip" SHA256 | \
-            Select-String -NotMatch "hash of file|CertUtil|^$" | \
-            ForEach-Object { $_.Line } | \
+          certutil -hashfile "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip" SHA256 | `
+            Select-String -NotMatch "hash of file|CertUtil|^$" | `
+            ForEach-Object { $_.Line } | `
             Out-File -Encoding ascii "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip.sha256"
           Get-Content "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip.sha256"
         shell: pwsh
