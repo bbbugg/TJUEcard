@@ -15,17 +15,20 @@
 1. **下载**
 
    从 [Releases](https://github.com/bbbugg/TjuEcard/releases) 页面下载适用于您操作系统的最新版本。
-    - `TJUEcardSetup-windows-latest.exe` 适用于 Windows
-    - `TJUEcardSetup-ubuntu-latest` 适用于 Linux
-    - `TJUEcardSetup-macos-latest` 适用于 macOS
+    - `TJUEcard-windows-x86_64.zip` 适用于 Windows
+    - `TJUEcard-linux-x86_64.tar.gz` 适用于 Linux
+    - `TJUEcard-macos-arm64.tar.gz` 或 `TJUEcard-macos-x86_64.tar.gz` 适用于 macOS
+
+   解压后，Windows系统包含 `TJUEcard.exe` 和 `TJUEcardSetup.exe` 两个文件，Linux和macOS系统则包含 `TJUEcard` 和
+   `TJUEcardSetup`。
 
 2. **配置**
 
-    - **Windows**: 直接运行 `TJUEcardSetup-windows-latest.exe`。
-    - **Linux/macOS**: 在终端中运行 `./TJUEcardSetup-ubuntu-latest` 或 `./TJUEcardSetup-macos-latest`。
+    - **Windows**: 直接运行 `TJUEcardSetup.exe`。
+    - **Linux/macOS**: 在终端中运行 `./TJUEcardSetup`。
 
    首次运行时，程序会引导您进行配置，包括学号、密码、用于接收邮件的邮箱等信息。配置成功后，会在程序同目录下生成
-   `TJUEcard_user_config` 文件。
+   `TJUEcard_user_config.json` 文件。
 
 3. **定时任务**
 
@@ -40,11 +43,13 @@
 
 - **查询定时任务**
 
-  打开命令提示符（CMD）或 PowerShell，输入以下命令：
-
-  ```bash
-  schtasks /query /tn TJUEcardAutoQuery
-  ```
+    - **方式一：命令行**
+      打开命令提示符（CMD）或 PowerShell，输入以下命令：
+      ```bash
+      schtasks /query /tn TJUEcardAutoQuery
+      ```
+    - **方式二：任务计划程序**
+      搜索"任务计划程序"并打开，在任务计划程序库中可以找到名为“TJUEcardAutoQuery”的计划，您可以右键单击它进行修改或删除。
 
 - **取消定时任务**
 
