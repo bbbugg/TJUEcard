@@ -360,7 +360,7 @@ if __name__ == "__main__":
                 # 验证成功后，才保存所有配置
                 save_config_to_json(USER_CONFIG_FILE, config_data)
                 save_cookies(session, COOKIE_FILE)
-                print("\n所有配置已成功保存！现在您可以使用 query.py 进行快速查询。")
+                print("\n所有配置已成功保存！现在您可以使用 main.py 进行快速查询。")
                 break
             else:
                 print(f"[错误] 验证失败: {result.get('retmsg')}")
