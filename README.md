@@ -79,7 +79,7 @@
        sudo nano /etc/crontab
        ```
 
-    2. 在编辑器中，找到并删除包含 `TJUEcard` 的那一行。
+    2. 在编辑器中，找到并删除包含 `tjuecard` 的那一行。
     3. 保存并退出编辑器。
 
 ### macOS
@@ -109,7 +109,7 @@
     3. 验证是否已移除：
     
        ``` zsh
-       sudo launchctl list | grep TJUEcard
+       sudo launchctl list | grep tjuecard
        ```
 
 ## 注意事项
