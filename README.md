@@ -97,7 +97,7 @@
        sudo rm ~/Library/LaunchAgents/com.tjuecard.automatic.plist
        ```
     
-    3. 验证是否已移除
+    3. 验证是否已移除：
     
        ``` zsh
        sudo launchctl list | grep TJUEcard
