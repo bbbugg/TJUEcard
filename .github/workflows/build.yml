@@ -17,11 +17,6 @@ jobs:
             runs_on: ubuntu-latest
             py_arch: x64
             desc: linux-x86_64
-          - os: linux
-            arch: arm64
-            runs_on: ubuntu-24.04-arm64
-            py_arch: arm64
-            desc: linux-arm64
 
           # ===== Windows =====
           - os: windows
