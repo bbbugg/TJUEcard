@@ -110,14 +110,57 @@ jobs:
           }
         shell: pwsh
 
-      # ===== 上传到 Release =====
-      - name: Upload executables to Release
+      # ===== 打包为单一 tar.gz =====
+      - name: Package (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          set -eux
+          cd dist
+          tar -czf "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" \
+            "TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}" \
+            "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}"
+          ls -l "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz"
+        shell: bash
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Set-StrictMode -Version Latest
+          Set-Location dist
+          tar -czf "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" `
+            "TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}.exe" `
+            "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.exe"
+          Get-ChildItem "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" | Format-List
+        shell: pwsh
+
+      # ===== 生成 SHA256 校验和 =====
+      - name: SHA256 (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          cd dist
+          shasum -a 256 "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" > "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz.sha256"
+          cat "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz.sha256"
+        shell: bash
+
+      - name: SHA256 (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Set-Location dist
+          certutil -hashfile "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" SHA256 | `
+            Select-String -NotMatch "hash of file|CertUtil|^$" | `
+            ForEach-Object { $_.Line } | `
+            Out-File -Encoding ascii "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz.sha256"
+          Get-Content "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz.sha256"
+        shell: pwsh
+
+      # ===== 上传到 Release：只上传打包文件（和校验和） =====
+      - name: Upload archives to Release
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.event.release.name }}
           body: ${{ github.event.release.body }}
           files: |
-            dist/TJUEcardSetup-*
-            dist/TJUEcard-*
+            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
+            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
