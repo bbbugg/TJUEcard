@@ -63,8 +63,13 @@ def setup_windows_scheduler(config_path, python_executable):
             print(f"   执行命令: {task_command}")
             return True
         else:
-            print(f"Windows定时任务创建失败:")
-            print(f"   {result.stderr}")
+            # 检查是否是权限问题
+            if "7042" in result.stderr or "Access is denied" in result.stderr or "拒绝访问" in result.stderr:
+                print("Windows定时任务创建失败：权限不足。")
+                print("请尝试以管理员身份运行此程序。")
+            else:
+                print(f"Windows定时任务创建失败:")
+                print(f"   {result.stderr}")
             return False
 
     except Exception as e:

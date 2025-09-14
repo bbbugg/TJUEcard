@@ -9,6 +9,14 @@
 - 跨平台支持（Windows, Linux, macOS）
 - 可设置为开机自启的定时任务
 
+## 系统要求
+
+- **Windows**: Windows 10 及以上版本
+- **Linux**: Ubuntu 22.04 及以上版本
+- **macOS**: 暂未测试通过。
+
+> 其他操作系统版本未经测试，不确定能否正常使用。
+
 ## 使用步骤
 
 1. **下载**
@@ -23,8 +31,8 @@
 
 2. **配置**
 
-    - **Windows**: 直接运行 `TJUEcardSetup.exe`。
-    - **Linux/macOS**: 在终端中运行 `./TJUEcardSetup`。
+    - **Windows**: 管理员权限运行 `TJUEcardSetup.exe`。
+    - **Linux/macOS**: 在终端中运行 `sudo ./TJUEcardSetup`。
 
    首次运行时，程序会引导您进行配置，包括学号、密码、用于接收邮件的邮箱等信息。配置成功后，会在程序同目录下生成
    `TJUEcard_user_config.json` 文件。
@@ -127,3 +135,14 @@
 - **定时任务未执行**：请检查您的系统时间和定时任务的设置是否正确。
 - **邮件未收到**：请检查您的邮箱配置是否正确，以及垃圾邮件文件夹。
 - **程序报错**：请在 [GitHub Issues](https://github.com/bbbugg/TJUEcard/issues) 中提交您的问题，并附上详细的错误信息。
+
+## 贡献
+
+我们欢迎任何形式的贡献！如果您有好的想法或需求，欢迎通过以下方式参与项目：
+
+- **提交 Pull Request**: 如果您修复了Bug或实现了新功能，请提交PR。
+- **创建 Issue**: 如果您有任何建议或发现了问题，请在 [Issue](https://github.com/bbbugg/TJUEcard/issues) 页面进行讨论。
+
+## TODO
+
+- [ ] 测试macOS系统上通过定时任务运行
