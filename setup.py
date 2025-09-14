@@ -362,7 +362,6 @@ if __name__ == "__main__":
                 # 验证成功后，才保存所有配置
                 save_config_to_json(USER_CONFIG_FILE, config_data)
                 save_cookies(session, COOKIE_FILE)
-                print("\n所有配置已成功保存！现在您可以使用 main 进行快速查询。")
 
                 # 记录当前时间并设置定时任务
                 current_time = datetime.now()
@@ -381,6 +380,7 @@ if __name__ == "__main__":
                 else:
                     print("[提示] 您可以选择稍后手动设置定时任务")
 
+                print("\n所有配置已成功保存！现在您可以使用 TJUEcard 进行一次快速查询，记录保存在TJUEcard.log。")
                 break
             else:
                 print(f"[错误] 验证失败: {result.get('retmsg')}")

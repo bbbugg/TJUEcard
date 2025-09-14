@@ -208,12 +208,21 @@ def setup_system_scheduler():
     current_platform = get_platform_type()
     print(f"检测到操作系统: {current_platform}")
 
-    # 获取Python可执行文件和配置文件路径
+    # 获取Python可执行文件和主脚本路径
     python_executable = sys.executable
-    config_path = os.path.abspath("main.py")
 
-    print(f"Python路径: {python_executable}")
-    print(f"执行文件: {config_path}")
+    if getattr(sys, 'frozen', False):
+        # 如果是打包后的可执行文件, config_path 实际上是可执行文件自己
+        # 子函数会处理具体要执行的文件
+        config_path = os.path.abspath(sys.executable)
+        # print(f"执行文件: {config_path}")
+    else:
+        # 如果是作为 .py 脚本运行, 则定位 main.py
+        # __file__ 是 scheduler_setup.py 的路径
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        config_path = os.path.join(base_dir, "main.py")
+        print(f"Python/可执行文件路径: {python_executable}")
+        print(f"执行文件: {config_path}")
 
     # 根据平台调用相应的设置函数
     success = False

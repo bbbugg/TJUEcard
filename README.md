@@ -7,20 +7,19 @@
 - 自动查询电费
 - 低于阈值邮件提醒
 - 跨平台支持（Windows, Linux, macOS）
-- 支持多房间查询
-- 可设置为开机自启或定时任务
+- 可设置为开机自启的定时任务
 
 ## 使用步骤
 
 1. **下载**
 
-   从 [Releases](https://github.com/bbbugg/TjuEcard/releases) 页面下载适用于您操作系统的最新版本。
+   从 [Releases](https://github.com/bbbugg/TJUEcard/releases) 页面下载适用于您操作系统的最新版本。
     - `TJUEcard-windows-x86_64.zip` 适用于 Windows
     - `TJUEcard-linux-x86_64.tar.gz` 适用于 Linux
     - `TJUEcard-macos-arm64.tar.gz` 或 `TJUEcard-macos-x86_64.tar.gz` 适用于 macOS
 
    解压后，Windows系统包含 `TJUEcard.exe` 和 `TJUEcardSetup.exe` 两个文件，Linux和macOS系统则包含 `TJUEcard` 和
-   `TJUEcardSetup`。
+   `TJUEcardSetup`。**请确保这两个文件在同一目录下。并且移动到一个相对固定的位置，以后不再移动。**
 
 2. **配置**
 
@@ -101,13 +100,13 @@
        ```
 
     2. 找到对应的配置文件并删除：
-    
+
        ```zsh
        sudo rm /Library/LaunchDaemons/com.tjuecard.automatic.plist
        ```
-    
+
     3. 验证是否已移除：
-    
+
        ```zsh
        sudo launchctl list | grep tjuecard
        ```
@@ -117,9 +116,14 @@
 - 本项目仅供学习交流使用，请勿用于非法用途。
 - 定时任务的执行时间是根据您运行 `TJUEcardSetup` 程序的时间确定的。
 - 如果您移动了程序的位置，定时任务可能会失效，需要重新运行 `TJUEcardSetup` 进行配置。
+- 确保`TJUEcardSetup` `TJUEcard` 两个程序在同一目录下。
+- 在运行完`TJUEcardSetup` 程序配置完成后，`TJUEcard` 程序可以手动运行，作为一次查询。
+- 如需重新配置用户密码、邮箱，可以直接修改 `TJUEcard_user_config.json` 文件中对应的值。如需重新配置查询房间，请重新运行
+  `TJUEcardSetup` 进行配置。
 
 ## 故障排除
 
+- **定时任务设置失败**：请以管理员权限运行 `TJUEcardSetup` 程序。
 - **定时任务未执行**：请检查您的系统时间和定时任务的设置是否正确。
 - **邮件未收到**：请检查您的邮箱配置是否正确，以及垃圾邮件文件夹。
 - **程序报错**：请在 [GitHub Issues](https://github.com/bbbugg/TJUEcard/issues) 中提交您的问题，并附上详细的错误信息。
