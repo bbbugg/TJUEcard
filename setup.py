@@ -1,9 +1,11 @@
+from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
 import time
 import json
 import os
 from send_email import send_notification_email
+from scheduler_setup import setup_system_scheduler
 
 # 导入工具函数和配置
 from utils import save_cookies, load_cookies, extract_csrf_token, load_config
@@ -361,6 +363,24 @@ if __name__ == "__main__":
                 save_config_to_json(USER_CONFIG_FILE, config_data)
                 save_cookies(session, COOKIE_FILE)
                 print("\n所有配置已成功保存！现在您可以使用 main 进行快速查询。")
+
+                # 记录当前时间并设置定时任务
+                current_time = datetime.now()
+                print(f"⏰ 记录执行时间: {current_time.strftime('%H:%M')}")
+
+                # 询问是否设置系统定时任务
+                setup_scheduler = input("\n是否自动设置系统定时任务？(y/n, 默认y): ").strip().lower()
+                if setup_scheduler in ['', 'y', 'yes']:
+                    try:
+                        # 导入并执行定时任务设置
+                        setup_system_scheduler()
+                    except ImportError:
+                        print("❌ 定时任务设置模块未找到")
+                    except Exception as e:
+                        print(f"❌ 定时任务设置失败: {e}")
+                else:
+                    print("💡 您可以选择稍后手动设置定时任务")
+
                 break
             else:
                 print(f"[错误] 验证失败: {result.get('retmsg')}")

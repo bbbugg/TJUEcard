@@ -13,7 +13,7 @@ jobs:
     # 使用矩阵策略，让任务在多个操作系统上并行运行
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest ] # 同时在最新的Ubuntu和Windows上构建
+        os: [ ubuntu-latest, windows-latest, macos-latest ] # 同时在最新的Ubuntu、Windows和macOS上构建
 
     # 指定运行环境
     runs-on: ${{ matrix.os }}
@@ -43,23 +43,23 @@ jobs:
       # 我们为 setup.py 使用控制台模式，为 main.py 使用无控制台模式
       - name: Build with PyInstaller
         run: |
-          pyinstaller --onefile setup.py
-          pyinstaller --onefile --noconsole main.py
+          pyinstaller --onefile --name TJUEcardSetup setup.py
+          pyinstaller --onefile --noconsole --name TJUEcard main.py
 
       # 第五步：上传构建好的可执行文件到Release
       # 使用新的官方action，分别上传两个文件
       - name: Upload setup executable
         uses: softprops/action-gh-release@v2
         with:
-          files: ./dist/setup${{ matrix.os == 'windows-latest' && '.exe' || '' }}
-          name: setup-${{ matrix.os }}${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+          files: ./dist/TJUEcardSetup${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+          name: TJUEcardSetup-${{ matrix.os }}${{ matrix.os == 'windows-latest' && '.exe' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload main executable
         uses: softprops/action-gh-release@v2
         with:
-          files: ./dist/main${{ matrix.os == 'windows-latest' && '.exe' || '' }}
-          name: main-${{ matrix.os }}${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+          files: ./dist/TJUEcard${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+          name: TJUEcard-${{ matrix.os }}${{ matrix.os == 'windows-latest' && '.exe' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
