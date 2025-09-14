@@ -194,7 +194,7 @@ def save_config_to_json(filename: str, config_data: dict):
 
 # --- 3. 主程序 ---
 if __name__ == "__main__":
-    print("欢迎使用电费查询配置程序 (setup.py)。")
+    print("欢迎使用电费查询配置程序 (setup)。")
     print("本程序将引导您登录、选择房间并配置邮件提醒。")
     print("\n注意：您的密码和邮箱授权码将以明文形式保存在 TJUEcard_user_config.json 文件中，请妥善保管此文件。")
 
@@ -360,7 +360,7 @@ if __name__ == "__main__":
                 # 验证成功后，才保存所有配置
                 save_config_to_json(USER_CONFIG_FILE, config_data)
                 save_cookies(session, COOKIE_FILE)
-                print("\n所有配置已成功保存！现在您可以使用 main.py 进行快速查询。")
+                print("\n所有配置已成功保存！现在您可以使用 main 进行快速查询。")
                 break
             else:
                 print(f"[错误] 验证失败: {result.get('retmsg')}")

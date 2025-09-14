@@ -56,7 +56,7 @@ def handle_relogin(session: requests.Session, config: dict) -> bool:
         msg = "配置文件中缺少登录凭据，无法自动登录。"
         print(f"[错误] {msg}")
         logger.error(msg)
-        print(f"\n[操作建议] 请重新运行 setup.py 更新您的配置。")
+        print(f"\n[操作建议] 请重新运行 setup 更新您的配置。")
         send_query_email(config, "【警告】电费查询失败通知", msg, -1)
         logger.info("--- 查询脚本运行结束 ---\n")
         sys.exit(1)
@@ -73,7 +73,7 @@ def handle_relogin(session: requests.Session, config: dict) -> bool:
         msg = "自动重新登录失败。保存的密码可能已更改。"
         print(f"[错误] {msg}")
         logger.error(msg)
-        print(f"\n[操作建议] 请重新运行 setup.py 更新您的配置。")
+        print(f"\n[操作建议] 请重新运行 setup 更新您的配置。")
         send_query_email(config, "【警告】电费查询失败通知", msg, -1)
         logger.info("--- 查询脚本运行结束 ---\n")
         sys.exit(1)
@@ -112,7 +112,7 @@ def send_query_email(config: dict, subject: str, body: str, current_electricity:
             logger.info(f"邮件通知发送成功到{notifier_config['email']}。")
             print("[成功] 邮件通知发送成功。")
         else:
-            print(f"[警告] 邮件通知发送失败，请检查 setup.py 中的邮箱配置。")
+            print(f"[警告] 邮件通知发送失败，请检查 setup 中的邮箱配置。")
             logger.error(f"邮件通知发送失败到{notifier_config['email']}。错误信息: {error_msg}")
             logger.debug(
                 f"发送邮件详细信息: 发件人={notifier_config['email']}, 收件人={notifier_config['email']}, 主题={subject}")
@@ -130,7 +130,7 @@ if __name__ == "__main__":
     if not config:
         msg = "因配置文件中房间参数无效或不存在，脚本退出。"
         logger.error(msg)
-        print(f"\n[操作建议] 请先运行 setup.py 来生成 {USER_CONFIG_FILE}。")
+        print(f"\n[操作建议] 请先运行 setup 来生成 {USER_CONFIG_FILE}。")
         logger.info("--- 查询脚本运行结束 ---\n")
         sys.exit(1)
 
@@ -280,6 +280,6 @@ if __name__ == "__main__":
         send_query_email(config, "电费查询成功通知", final_message, current_elec)
     else:
         send_query_email(config, "【警告】电费查询失败通知", final_message, -1)
-        print("\n[操作建议] 请检查网络或运行 setup.py 刷新配置。")
+        print("\n[操作建议] 请检查网络或运行 setup 刷新配置。")
 
     logger.info("--- 查询脚本运行结束 ---\n")
