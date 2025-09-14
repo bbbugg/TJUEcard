@@ -18,6 +18,9 @@ jobs:
     # 指定运行环境
     runs-on: ${{ matrix.os }}
 
+    permissions:
+      contents: write
+
     steps:
       # 第一步：检出（下载）你的代码到虚拟环境中
       - name: Checkout code
