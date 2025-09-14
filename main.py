@@ -20,7 +20,7 @@ def perform_auto_login(session: requests.Session, username: str, password: str) 
     print("[信息] 正在尝试自动重新登录...")
     logger.info("尝试自动重新登录")
     try:
-        page_response = session.get(LOGIN_PAGE_URL)
+        page_response = session.get(LOGIN_PAGE_URL, timeout=10)  # 设置10秒超时
         page_response.raise_for_status()
         soup = BeautifulSoup(page_response.text, 'html.parser')
         csrf_input_tag = soup.find('input', {'name': '_csrf'})
@@ -35,7 +35,7 @@ def perform_auto_login(session: requests.Session, username: str, password: str) 
     login_data = {'j_username': username, 'j_password': password, '_csrf': csrf_token}
     try:
         headers = {'Referer': LOGIN_PAGE_URL, 'Origin': BASE_DOMAIN}
-        response = session.post(LOGIN_URL, data=login_data, headers=headers)
+        response = session.post(LOGIN_URL, data=login_data, headers=headers, timeout=10)  # 设置10秒超时
         response.raise_for_status()
         if '<frameset' not in response.text:
             logger.error("登录失败，服务器返回的页面不包含预期内容")
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         try:
             verify_headers = session.headers.copy()
             del verify_headers['X-Requested-With']
-            verify_response = session.get(VERIFY_LOGIN_URL, headers=verify_headers)
+            verify_response = session.get(VERIFY_LOGIN_URL, headers=verify_headers, timeout=10)  # 设置10秒超时
             verify_response.raise_for_status()
             if 'j_spring_security_check' not in verify_response.text and 'j_username' not in verify_response.text:
                 print("[成功] 会话验证通过。")
@@ -190,7 +190,7 @@ if __name__ == "__main__":
             page_headers = session.headers.copy()
             del page_headers['X-Requested-With']
             page_headers['Referer'] = LOAD_ELECTRIC_INDEX_URL
-            page_response = session.get(token_page_url, headers=page_headers)
+            page_response = session.get(token_page_url, headers=page_headers, timeout=10)  # 设置10秒超时
             page_response.raise_for_status()
             final_csrf_token = extract_csrf_token(page_response.text)
 
@@ -219,7 +219,7 @@ if __name__ == "__main__":
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                 'Referer': token_page_url
             }
-            query_response = session.post(QUERY_URL, data=query_payload, headers=query_headers)
+            query_response = session.post(QUERY_URL, data=query_payload, headers=query_headers, timeout=10)  # 设置10秒超时
             query_response.raise_for_status()
             result = query_response.json()
 

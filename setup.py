@@ -20,7 +20,7 @@ from config import (
 
 def perform_login(session) -> tuple[str | None, str | None]:
     try:
-        page_response = session.get(LOGIN_PAGE_URL)
+        page_response = session.get(LOGIN_PAGE_URL, timeout=10)  # 设置10秒超时
         page_response.raise_for_status()
         soup = BeautifulSoup(page_response.text, 'html.parser')
         csrf_input_tag = soup.find('input', {'name': '_csrf'})
@@ -39,7 +39,7 @@ def perform_login(session) -> tuple[str | None, str | None]:
         login_data = {'j_username': username, 'j_password': password, '_csrf': csrf_token}
         try:
             headers = {'Referer': LOGIN_PAGE_URL, 'Origin': BASE_DOMAIN}
-            response = session.post(LOGIN_URL, data=login_data, headers=headers)
+            response = session.post(LOGIN_URL, data=login_data, headers=headers, timeout=10)  # 设置10秒超时
             response.raise_for_status()
             if '<frameset' not in response.text:
                 print("[错误] 登录失败！请检查用户名或密码。")
@@ -80,7 +80,7 @@ def fetch_options(session: requests.Session, level: str, payload: dict, csrf_tok
     try:
         time.sleep(0.3)
         api_headers = {'X-CSRF-TOKEN': csrf_token, 'Referer': token_page_url}
-        response = session.post(url, data=payload, headers=api_headers)
+        response = session.post(url, data=payload, headers=api_headers, timeout=10)  # 设置10秒超时
         response.raise_for_status()
         try:
             data = response.json()
@@ -161,7 +161,7 @@ def select_electric_system(session: requests.Session) -> dict | None:
     try:
         headers = session.headers.copy()
         if 'X-Requested-With' in headers: del headers['X-Requested-With']
-        response = session.get(LOAD_ELECTRIC_INDEX_URL, headers=headers)
+        response = session.get(LOAD_ELECTRIC_INDEX_URL, headers=headers, timeout=10)  # 设置10秒超时
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
         target_systems = ["北洋园电控", "卫津路空调电控", "卫津路宿舍电控"]
@@ -260,7 +260,7 @@ if __name__ == "__main__":
             page_headers = session.headers.copy()
             del page_headers['X-Requested-With']
             page_headers['Referer'] = LOAD_ELECTRIC_INDEX_URL
-            page_response = session.get(token_page_url, headers=page_headers)
+            page_response = session.get(token_page_url, headers=page_headers, timeout=10)  # 设置10秒超时
             page_response.raise_for_status()
             api_csrf_token = extract_csrf_token(page_response.text)
             if not api_csrf_token:
@@ -290,7 +290,7 @@ if __name__ == "__main__":
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
                 'Referer': token_page_url
             }
-            query_response = session.post(QUERY_URL, data=query_payload, headers=query_headers)
+            query_response = session.post(QUERY_URL, data=query_payload, headers=query_headers, timeout=10)  # 设置10秒超时
             query_response.raise_for_status()
             result = query_response.json()
 
