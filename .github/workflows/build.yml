@@ -1,72 +1,124 @@
 name: Build and Release Executables
 
-# 触发条件：当在GitHub上创建新的Release时运行此工作流
 on:
   release:
-    types: [ created ]
+    types: [created]
 
 jobs:
   build:
-    # 定义任务名称
-    name: Build for ${{ matrix.os }}
-
-    # 使用矩阵策略，让任务在多个操作系统上并行运行
+    name: Build for ${{ matrix.desc }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ] # 同时在最新的Ubuntu、Windows和macOS上构建
+        include:
+          # ===== Linux =====
+          - os: linux
+            arch: x86_64
+            runs_on: ubuntu-latest
+            py_arch: x64
+            desc: linux-x86_64
+          - os: linux
+            arch: arm64
+            runs_on: ubuntu-24.04-arm64
+            py_arch: arm64
+            desc: linux-arm64
 
-    # 指定运行环境
-    runs-on: ${{ matrix.os }}
+          # ===== Windows =====
+          - os: windows
+            arch: x86_64
+            runs_on: windows-latest
+            py_arch: x64
+            desc: windows-x86_64
+
+          # ===== macOS =====
+          # macOS-13 为 Intel x86_64，macOS-14 为 Apple Silicon arm64
+          - os: macos
+            arch: x86_64
+            runs_on: macos-13
+            py_arch: x64
+            desc: macos-x86_64
+          - os: macos
+            arch: arm64
+            runs_on: macos-14
+            py_arch: arm64
+            desc: macos-arm64
+
+    runs-on: ${{ matrix.runs_on }}
 
     permissions:
       contents: write
 
     steps:
-      # 第一步：检出（下载）你的代码到虚拟环境中
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 第二步：根据当前操作系统设置Python环境
+      # 安装对应架构的 Python
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.12' # 您可以根据需要更改Python版本
+          python-version: '3.12'
+          architecture: ${{ matrix.py_arch }}
 
-      # 第三步：安装项目依赖
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install pyinstaller
-
-      # 第四步：使用PyInstaller打包两个脚本
-      # 我们为 setup.py 使用控制台模式，为 main.py 使用无控制台模式
-      - name: Build with PyInstaller
-        run: |
-          pyinstaller --onefile --name TJUEcardSetup setup.py
-          pyinstaller --onefile --noconsole --name TJUEcard main.py
-
-      # 第五步：为不同操作系统的可执行文件重命名
-      - name: Rename executables for release
-        run: |
-          if [ "${{ runner.os }}" == "Linux" ]; then
-            mv dist/TJUEcardSetup dist/TJUEcardSetup-linux
-            mv dist/TJUEcard dist/TJUEcard-linux
-          elif [ "${{ runner.os }}" == "Windows" ]; then
-            mv dist/TJUEcardSetup.exe dist/TJUEcardSetup-windows.exe
-            mv dist/TJUEcard.exe dist/TJUEcard-windows.exe
-          elif [ "${{ runner.os }}" == "macOS" ]; then
-            mv dist/TJUEcardSetup dist/TJUEcardSetup-macos
-            mv dist/TJUEcard dist/TJUEcard-macos
-          fi
         shell: bash
 
-      # 第六步：上传构建好的可执行文件到Release
+      - name: Build with PyInstaller
+        run: |
+          mkdir -p dist
+          pyinstaller --onefile --name TJUEcardSetup setup.py
+          pyinstaller --onefile --noconsole --name TJUEcard main.py
+        shell: bash
+
+      # ===== 重命名产物 =====
+      - name: Rename (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          set -eux
+          mv dist/TJUEcardSetup "dist/TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}"
+          mv dist/TJUEcard     "dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}"
+        shell: bash
+
+      - name: Rename (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Rename-Item dist\TJUEcardSetup.exe "TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}.exe"
+          Rename-Item dist\TJUEcard.exe      "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.exe"
+        shell: pwsh
+
+      # ===== 验证架构 =====
+      - name: Check binary arch (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          file "dist/TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}"
+          file "dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}"
+        shell: bash
+
+      - name: Check binary arch (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          lipo -info "dist/TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}" || true
+          lipo -info "dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}" || true
+        shell: bash
+
+      - name: Check binary arch (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          if (Get-Command dumpbin -ErrorAction SilentlyContinue) {
+            dumpbin /headers "dist\TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}.exe" | Select-String -Pattern "machine"
+            dumpbin /headers "dist\TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.exe" | Select-String -Pattern "machine"
+          } else {
+            Write-Host "dumpbin not found; skipping arch check."
+          }
+        shell: pwsh
+
+      # ===== 上传到 Release =====
       - name: Upload executables to Release
         uses: softprops/action-gh-release@v2
         with:
-          name: ${{ github.event.release.name }}
-          body: ${{ github.event.release.body }}
           files: |
             dist/TJUEcardSetup-*
             dist/TJUEcard-*
