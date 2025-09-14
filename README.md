@@ -84,16 +84,33 @@
 
 ### macOS
 
-macOS的定时任务是通过 `launchd` 管理的，您设置的任务配置文件位于 `/Library/LaunchDaemons/com.tjuecard.automatic.plist`。
+- **查询定时任务**
 
-- **停止并卸载任务**
+  打开终端，输入以下命令查看当前 root 用户的 `LaunchAgent` 任务列表：
 
-  如果需要停止并删除定时任务，请在终端中运行以下命令（需要 `sudo` 权限）：
-
-  ```bash
-  sudo launchctl unload /Library/LaunchDaemons/com.tjuecard.automatic.plist
-  sudo rm /Library/LaunchDaemons/com.tjuecard.automatic.plist
+  ```zsh
+  sudo launchctl list
   ```
+
+- **取消定时任务**
+
+    1. 使用 `launchctl bootout` 命令停止并移除任务：
+
+       ```zsh
+       sudo launchctl bootout system /Library/LaunchDaemons/com.tjuecard.automatic.plist
+       ```
+
+    2. 找到对应的配置文件并删除：
+    
+       ``` zsh
+       sudo rm /Library/LaunchDaemons/com.tjuecard.automatic.plist
+       ```
+    
+    3. 验证是否已移除：
+    
+       ``` zsh
+       sudo launchctl list | grep TJUEcard
+       ```
 
 ## 注意事项
 
