@@ -46,20 +46,27 @@ jobs:
           pyinstaller --onefile --name TJUEcardSetup setup.py
           pyinstaller --onefile --noconsole --name TJUEcard main.py
 
-      # 第五步：上传构建好的可执行文件到Release
-      # 使用新的官方action，分别上传两个文件
-      - name: Upload setup executable
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ./dist/TJUEcardSetup${{ matrix.os == 'windows-latest' && '.exe' || '' }}
-          name: TJUEcardSetup-${{ matrix.os }}${{ matrix.os == 'windows-latest' && '.exe' || '' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 第五步：为不同操作系统的可执行文件重命名
+      - name: Rename executables for release
+        run: |
+          if [ "${{ runner.os }}" == "Linux" ]; then
+            mv dist/TJUEcardSetup dist/TJUEcardSetup-linux
+            mv dist/TJUEcard dist/TJUEcard-linux
+          elif [ "${{ runner.os }}" == "Windows" ]; then
+            mv dist/TJUEcardSetup.exe dist/TJUEcardSetup-windows.exe
+            mv dist/TJUEcard.exe dist/TJUEcard-windows.exe
+          elif [ "${{ runner.os }}" == "macOS" ]; then
+            mv dist/TJUEcardSetup dist/TJUEcardSetup-macos
+            mv dist/TJUEcard dist/TJUEcard-macos
+          fi
+        shell: bash
 
-      - name: Upload main executable
+      # 第六步：上传构建好的可执行文件到Release
+      - name: Upload executables to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./dist/TJUEcard${{ matrix.os == 'windows-latest' && '.exe' || '' }}
-          name: TJUEcard-${{ matrix.os }}${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+          files: |
+            dist/TJUEcardSetup-*
+            dist/TJUEcard-*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
