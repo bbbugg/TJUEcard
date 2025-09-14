@@ -79,7 +79,7 @@
        sudo nano /etc/crontab
        ```
 
-    2. 在编辑器中，找到并删除包含 `TJUEcard` 的那一行。
+    2. 在编辑器中，找到并删除包含 `tjuecard` 的那一行。
     3. 保存并退出编辑器。
 
 ### macOS
@@ -102,14 +102,14 @@
 
     2. 找到对应的配置文件并删除：
     
-       ``` zsh
+       ```zsh
        sudo rm /Library/LaunchDaemons/com.tjuecard.automatic.plist
        ```
     
     3. 验证是否已移除：
     
-       ``` zsh
-       sudo launchctl list | grep TJUEcard
+       ```zsh
+       sudo launchctl list | grep tjuecard
        ```
 
 ## 注意事项
