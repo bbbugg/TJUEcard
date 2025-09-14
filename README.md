@@ -102,13 +102,13 @@
 
     2. 找到对应的配置文件并删除：
     
-       ``` zsh
+       ```zsh
        sudo rm /Library/LaunchDaemons/com.tjuecard.automatic.plist
        ```
     
     3. 验证是否已移除：
     
-       ``` zsh
+       ```zsh
        sudo launchctl list | grep tjuecard
        ```
 
