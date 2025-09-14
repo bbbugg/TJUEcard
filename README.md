@@ -94,7 +94,7 @@
     2. 找到对应的配置文件并删除：
     
        ``` zsh
-    sudo rm ~/Library/LaunchAgents/com.tjuecard.automatic.plist
+       sudo rm ~/Library/LaunchAgents/com.tjuecard.automatic.plist
        ```
     
     3. 验证是否已移除
