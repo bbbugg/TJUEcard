@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import sys
+import os
 """
 配置文件，统一管理常量
 """
@@ -32,10 +34,18 @@ KEY_MAP = {
     'room': {'list': 'rooms', 'id': 'roomId', 'name': 'roomName'},
 }
 
+# 确定基础路径，用于存放配置文件和日志
+if getattr(sys, 'frozen', False):
+    # 如果是打包后的可执行文件，则使用可执行文件所在目录
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    # 如果是直接运行 .py 文件，则使用 .py 文件所在目录
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # 文件路径配置
-USER_CONFIG_FILE = 'TJUEcard_user_config.json'
-COOKIE_FILE = 'TJUEcard_session.pkl'
-LOG_FILE = 'TJUEcard.log'
+USER_CONFIG_FILE = os.path.join(BASE_DIR, 'TJUEcard_user_config.json')
+COOKIE_FILE = os.path.join(BASE_DIR, 'TJUEcard_session.pkl')
+LOG_FILE = os.path.join(BASE_DIR, 'TJUEcard.log')
 
 # HTTP请求头配置
 DEFAULT_HEADERS = {
