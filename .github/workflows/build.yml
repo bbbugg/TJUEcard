@@ -1,8 +1,9 @@
 name: Build and Release Executables
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build:
@@ -99,10 +100,10 @@ jobs:
         run: |
           set -eux
           cd dist
-          tar -czf "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.tar.gz" \
+          tar -czf "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.tar.gz" \
             "TJUEcardSetup" \
             "TJUEcard"
-          ls -l "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.tar.gz"
+          ls -l "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.tar.gz"
         shell: bash
 
       - name: Package (Windows)
@@ -110,8 +111,8 @@ jobs:
         run: |
           Set-StrictMode -Version Latest
           Set-Location dist
-          Compress-Archive -Path "TJUEcardSetup.exe","TJUEcard.exe" -DestinationPath "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip"
-          Get-ChildItem "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip" | Format-List
+          Compress-Archive -Path "TJUEcardSetup.exe","TJUEcard.exe" -DestinationPath "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.zip"
+          Get-ChildItem "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.zip" | Format-List
         shell: pwsh
 
       # ===== 生成 SHA256 校验和 =====
@@ -119,29 +120,26 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cd dist
-          shasum -a 256 "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.tar.gz" > "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.tar.gz.sha256"
-          cat "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.tar.gz.sha256"
+          shasum -a 256 "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.tar.gz" > "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.tar.gz.sha256"
+          cat "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.tar.gz.sha256"
         shell: bash
 
       - name: SHA256 (Windows)
         if: runner.os == 'Windows'
         run: |
           Set-Location dist
-          certutil -hashfile "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip" SHA256 | `
+          certutil -hashfile "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.zip" SHA256 | `
             Select-String -NotMatch "hash of file|CertUtil|^$" | `
             ForEach-Object { $_.Line } | `
-            Out-File -Encoding ascii "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip.sha256"
-          Get-Content "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip.sha256"
+            Out-File -Encoding ascii "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.zip.sha256"
+          Get-Content "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.zip.sha256"
         shell: pwsh
 
       # ===== 上传到 Release：只上传打包文件（和校验和） =====
-      - name: Upload archives to Release
+      - name: Release
         uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: ${{ github.event.release.name }}
-          body: ${{ github.event.release.body }}
           files: |
-            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.${{ runner.os == 'Windows' && 'zip' || 'tar.gz' }}
-            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.${{ runner.os == 'Windows' && 'zip.sha256' || 'tar.gz.sha256' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.${{ runner.os == 'Windows' && 'zip' || 'tar.gz' }}
+            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.${{ runner.os == 'Windows' && 'zip.sha256' || 'tar.gz.sha256' }}
