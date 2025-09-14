@@ -127,10 +127,8 @@ jobs:
         run: |
           Set-StrictMode -Version Latest
           Set-Location dist
-          tar -czf "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" `
-            "TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}.exe" `
-            "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.exe"
-          Get-ChildItem "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" | Format-List
+          Compress-Archive -Path "TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}.exe","TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.exe" -DestinationPath "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.zip"
+          Get-ChildItem "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.zip" | Format-List
         shell: pwsh
 
       # ===== 生成 SHA256 校验和 =====
@@ -146,11 +144,11 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           Set-Location dist
-          certutil -hashfile "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" SHA256 | `
+          certutil -hashfile "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.zip" SHA256 | `
             Select-String -NotMatch "hash of file|CertUtil|^$" | `
             ForEach-Object { $_.Line } | `
-            Out-File -Encoding ascii "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz.sha256"
-          Get-Content "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz.sha256"
+            Out-File -Encoding ascii "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.zip.sha256"
+          Get-Content "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.zip.sha256"
         shell: pwsh
 
       # ===== 上传到 Release：只上传打包文件（和校验和） =====
@@ -160,7 +158,7 @@ jobs:
           name: ${{ github.event.release.name }}
           body: ${{ github.event.release.body }}
           files: |
-            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
-            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz.sha256
+            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.${{ runner.os == 'Windows' && 'zip' || 'tar.gz' }}
+            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.${{ runner.os == 'Windows' && 'zip.sha256' || 'tar.gz.sha256' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
