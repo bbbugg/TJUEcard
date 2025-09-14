@@ -74,7 +74,7 @@ def handle_relogin(session: requests.Session, config: dict) -> bool:
         print(f"[错误] {msg}")
         logger.error(msg)
         print(f"\n[操作建议] 请重新运行 setup 更新您的配置。")
-        send_query_email(config, "【警告】电费查询失败通知", msg, -1)
+        send_query_email(config, "[警告] 电费查询失败通知", msg, -1)
         logger.info("--- 查询脚本运行结束 ---\n")
         sys.exit(1)
 
@@ -99,6 +99,17 @@ def send_query_email(config: dict, subject: str, body: str, current_electricity:
             logger.info(f"剩余电量({current_electricity}度)高于设置的通知阈值({threshold}度)，不发送邮件。")
             print(f"[信息] 剩余电量({current_electricity}度)高于设置的通知阈值({threshold}度)，不发送邮件。")
             return
+        elif threshold >= 0 and current_electricity >= 0:
+            # 剩余电量低于阈值且不是失败通知，则发送邮件
+            logger.info(f"剩余电量({current_electricity}度)低于设置的通知阈值({threshold}度)，发送邮件通知。")
+            subject = f"[警告] 剩余电量({current_electricity}度)低于设置的通知阈值({threshold}度)"
+        elif current_electricity >= 0:
+            # 未设置阈值，正常通知
+            logger.info(f"未设置通知阈值，当前电量为{current_electricity}度，发送正常通知。")
+            subject = f"电费查询成功，当前电量为{current_electricity}度"
+        else:
+            # 失败通知
+            logger.info("查询失败，发送失败通知。")
 
         print("[信息] 正在发送邮件通知...")
         success, error_msg = send_notification_email(
