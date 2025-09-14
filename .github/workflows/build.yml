@@ -119,6 +119,8 @@ jobs:
       - name: Upload executables to Release
         uses: softprops/action-gh-release@v2
         with:
+          name: ${{ github.event.release.name }}
+          body: ${{ github.event.release.body }}
           files: |
             dist/TJUEcardSetup-*
             dist/TJUEcard-*
