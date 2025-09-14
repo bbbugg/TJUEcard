@@ -69,86 +69,94 @@ jobs:
         shell: bash
 
       # ===== 重命名产物 =====
+
       - name: Rename (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
           set -eux
-          mv dist/TJUEcardSetup "dist/TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}"
-          mv dist/TJUEcard     "dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}"
+          mv dist/TJUEcardSetup "dist/TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}"
+          mv dist/TJUEcard     "dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}"
         shell: bash
 
       - name: Rename (Windows)
         if: runner.os == 'Windows'
         run: |
-          Rename-Item dist\TJUEcardSetup.exe "TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}.exe"
-          Rename-Item dist\TJUEcard.exe      "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.exe"
+          Rename-Item dist\TJUEcardSetup.exe "TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.exe"
+          Rename-Item dist\TJUEcard.exe      "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.exe"
         shell: pwsh
 
       # ===== 验证架构 =====
+
       - name: Check binary arch (Linux)
         if: runner.os == 'Linux'
         run: |
-          file "dist/TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}"
-          file "dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}"
+          file "dist/TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}"
+          file "dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}"
         shell: bash
+
 
       - name: Check binary arch (macOS)
         if: runner.os == 'macOS'
         run: |
-          lipo -info "dist/TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}" || true
-          lipo -info "dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}" || true
+          lipo -info "dist/TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}" || true
+          lipo -info "dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}" || true
         shell: bash
+
 
       - name: Check binary arch (Windows)
         if: runner.os == 'Windows'
         run: |
           if (Get-Command dumpbin -ErrorAction SilentlyContinue) {
-            dumpbin /headers "dist\TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}.exe" | Select-String -Pattern "machine"
-            dumpbin /headers "dist\TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.exe" | Select-String -Pattern "machine"
+            dumpbin /headers "dist\TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.exe" | Select-String -Pattern "machine"
+            dumpbin /headers "dist\TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.exe" | Select-String -Pattern "machine"
           } else {
             Write-Host "dumpbin not found; skipping arch check."
           }
         shell: pwsh
 
       # ===== 打包为单一 tar.gz =====
+
       - name: Package (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
           set -eux
           cd dist
-          tar -czf "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" \
-            "TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}" \
-            "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}"
-          ls -l "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz"
+          tar -czf "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.tar.gz" \
+            "TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}" \
+            "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}"
+          ls -l "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.tar.gz"
         shell: bash
+
 
       - name: Package (Windows)
         if: runner.os == 'Windows'
         run: |
           Set-StrictMode -Version Latest
           Set-Location dist
-          Compress-Archive -Path "TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}.exe","TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.exe" -DestinationPath "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.zip"
-          Get-ChildItem "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.zip" | Format-List
+          Compress-Archive -Path "TJUEcardSetup-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.exe","TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.exe" -DestinationPath "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip"
+          Get-ChildItem "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip" | Format-List
         shell: pwsh
 
       # ===== 生成 SHA256 校验和 =====
+
       - name: SHA256 (Linux/macOS)
         if: runner.os != 'Windows'
         run: |
           cd dist
-          shasum -a 256 "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" > "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz.sha256"
-          cat "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.tar.gz.sha256"
+          shasum -a 256 "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.tar.gz" > "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.tar.gz.sha256"
+          cat "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.tar.gz.sha256"
         shell: bash
+
 
       - name: SHA256 (Windows)
         if: runner.os == 'Windows'
         run: |
           Set-Location dist
-          certutil -hashfile "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.zip" SHA256 | `
+          certutil -hashfile "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip" SHA256 | `
             Select-String -NotMatch "hash of file|CertUtil|^$" | `
             ForEach-Object { $_.Line } | `
-            Out-File -Encoding ascii "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.zip.sha256"
-          Get-Content "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.zip.sha256"
+            Out-File -Encoding ascii "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip.sha256"
+          Get-Content "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.zip.sha256"
         shell: pwsh
 
       # ===== 上传到 Release：只上传打包文件（和校验和） =====
@@ -158,7 +166,7 @@ jobs:
           name: ${{ github.event.release.name }}
           body: ${{ github.event.release.body }}
           files: |
-            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.${{ runner.os == 'Windows' && 'zip' || 'tar.gz' }}
-            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}.${{ runner.os == 'Windows' && 'zip.sha256' || 'tar.gz.sha256' }}
+            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.${{ runner.os == 'Windows' && 'zip' || 'tar.gz' }}
+            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.release.name }}.${{ runner.os == 'Windows' && 'zip.sha256' || 'tar.gz.sha256' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
