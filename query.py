@@ -146,30 +146,30 @@ def handle_relogin(session: requests.Session, config: dict) -> bool:
         sys.exit(1)
 
 
-# 【新增】一个辅助函数，用于发送查询结果邮件
+# 一个辅助函数，用于发送查询结果邮件
 def send_query_email(config: dict, subject: str, body: str):
     """检查配置并发送邮件，如果未配置则静默跳过。"""
     if not config:
         logger.warning("尝试发送邮件，但传入的config为None。")
         print("[警告] 未配置邮箱通知，无法发送邮件。")
         return  # 直接返回，不做任何事
-    if "email_notifier" in config and config["email_notifier"].get("qq_email") and config["email_notifier"].get(
+    if "email_notifier" in config and config["email_notifier"].get("email") and config["email_notifier"].get(
             "auth_code"):
         notifier_config = config["email_notifier"]
         print("[信息] 正在发送邮件通知...")
-        success = send_notification_email(
-            sender_email=notifier_config["qq_email"],
+        success, error_msg = send_notification_email(
+            sender_email=notifier_config["email"],
             auth_code=notifier_config["auth_code"],
-            recipient_email=notifier_config["qq_email"],
+            recipient_email=notifier_config["email"],
             subject=subject,
             body=body
         )
         if success:
-            logger.info(f"邮件通知发送成功到{notifier_config["qq_email"]}。")
+            logger.info(f"邮件通知发送成功到{notifier_config["email"]}。")
             print("[成功] 邮件通知发送成功。")
         else:
-            print("[警告] 邮件通知发送失败，请检查 setup.py 中的邮箱配置。")
-            logger.error(f"邮件通知发送失败到{notifier_config["qq_email"]}。")
+            print(f"[警告] 邮件通知发送失败，请检查 setup.py 中的邮箱配置。")
+            logger.error(f"邮件通知发送失败到{notifier_config["email"]}。错误信息: {error_msg}")
     else:
         logger.info("未配置邮箱通知，跳过发送邮件。")
         # 如果配置文件中没有邮箱信息，则不执行任何操作

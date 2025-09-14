@@ -235,10 +235,12 @@ if __name__ == "__main__":
     email_configured = False
     while not email_configured:
         print("\n--- 邮件通知配置 ---")
-        print("您需要提供一个QQ邮箱用于接收通知，以及该邮箱的SMTP授权码。")
+        print("您需要提供一个QQ邮箱或163邮箱用于接收通知，以及该邮箱的SMTP授权码。")
         print(
             "授权码不是您的QQ密码，请前往QQ邮箱 -> 设置 -> 账号与安全 -> 安全设置 -> 开启“POP3/IMAP/SMTP/Exchange/CardDAV 服务” -> 生成授权码获取。")
-        user_email = input("请输入您的QQ邮箱: ")
+        print(
+            "或者请前往163邮箱 -> 设置 -> POP3/SMTP/IMAP -> 开启“IMAP/SMTP服务”，生成授权码获取。")
+        user_email = input("请输入您的邮箱: ")
         user_auth_code = input("请输入您的邮箱授权码: ")
 
         if not user_email or not user_auth_code:
@@ -250,7 +252,7 @@ if __name__ == "__main__":
                 continue  # 重新输入
 
         print("\n[信息] 正在发送一封测试邮件以验证您的配置...")
-        email_success = send_notification_email(
+        email_success, email_error = send_notification_email(
             sender_email=user_email,
             auth_code=user_auth_code,
             recipient_email=user_email,
@@ -262,7 +264,7 @@ if __name__ == "__main__":
             print("[成功] 测试邮件发送成功！请检查您的收件箱。")
             email_configured = True
         else:
-            print("[错误] 测试邮件发送失败！请重试")
+            print(f"[错误] 测试邮件发送失败！错误信息: {email_error}")
 
     while True:
         selected_system = select_electric_system(session)
@@ -344,7 +346,7 @@ if __name__ == "__main__":
                 # 只有在用户配置了邮箱的情况下才添加
                 if user_email and user_auth_code:
                     config_data["email_notifier"] = {
-                        "qq_email": user_email,
+                        "email": user_email,
                         "auth_code": user_auth_code
                     }
 
