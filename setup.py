@@ -13,7 +13,7 @@ from config import (
     BASE_DOMAIN, USER_CONFIG_FILE, LOAD_ELECTRIC_INDEX_URL, LOGIN_URL,
     QUERY_URL, COOKIE_FILE, LOGIN_PAGE_URL, API_BASE_URL, API_URLS, KEY_MAP
 )
-
+from crypto_store import encrypt_for_storage, get_key_file_path
 
 # --- 1. 核心功能函数 ---
 
@@ -198,7 +198,8 @@ def save_config_to_json(filename: str, config_data: dict):
 if __name__ == "__main__":
     print("欢迎使用电费查询配置程序 (setup)。")
     print("本程序将引导您登录、选择房间并配置邮件提醒。")
-    print("\n注意：您的密码和邮箱授权码将以明文形式保存在 TJUEcard_user_config.json 文件中，请妥善保管此文件。")
+    print("说明：您的登录密码与邮箱授权码将以密文对象写入 JSON 配置，")
+    print(f"用于解密的本地数据密钥保存在: {get_key_file_path()}（首次保存时自动生成）。请妥善备份该文件。")
 
     session = requests.Session()
     session.headers.update({
@@ -312,11 +313,11 @@ if __name__ == "__main__":
                     print("========================")
                     result_text = f"剩余电量: {remaining_electricity} 度"
 
-                # 构建最终的配置文件
+                # 构建最终的配置文件（写入密文字段）
                 config_data = {
                     "credentials": {
                         "username": username,
-                        "password": password
+                        "password_enc": encrypt_for_storage(password)
                     },
                     "selection": {
                         "system": selected_system,
@@ -324,11 +325,13 @@ if __name__ == "__main__":
                     }
                 }
                 # 只有在用户配置了邮箱的情况下才添加
-                if user_email and user_auth_code:
+                if user_email and user_email.strip():
                     config_data["email_notifier"] = {
                         "email": user_email,
-                        "auth_code": user_auth_code
                     }
+                    if user_auth_code and user_auth_code.strip():
+                        config_data["email_notifier"]["auth_code_enc"] = encrypt_for_storage(user_auth_code)
+
                     # 添加电费通知阈值设置
                     print("\n--- 电费通知阈值设置 ---")
                     print("设置后，只有当剩余电量小于等于阈值时才会发送邮件通知。")

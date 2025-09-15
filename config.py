@@ -59,3 +59,9 @@ LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 # 目标电控系统列表
 TARGET_SYSTEMS = ["北洋园电控", "卫津路空调电控", "卫津路宿舍电控"]
+
+# 本地密钥与加密配置
+_KEY_FILENAME = ".tjuecard_key"
+_KEY_FILE_PATH = os.path.join(BASE_DIR, _KEY_FILENAME)
+_KID = "local-v1"  # key id，便于以后密钥轮换
+_ALG = "AES-256-GCM"

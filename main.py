@@ -8,6 +8,7 @@ from config import (
     BASE_DOMAIN, USER_CONFIG_FILE, QUERY_URL, COOKIE_FILE, VERIFY_LOGIN_URL,
     LOGIN_PAGE_URL, LOGIN_URL, LOAD_ELECTRIC_INDEX_URL, DEFAULT_HEADERS
 )
+from crypto_store import decrypt_from_storage, migrate_plaintext_to_encrypted, get_key_file_path
 
 # --- 1. 日志配置 ---
 logger = setup_logger('TJUEcardQuery')
@@ -51,7 +52,7 @@ def perform_auto_login(session: requests.Session, username: str, password: str) 
 # 处理重连逻辑
 def handle_relogin(session: requests.Session, config: dict) -> bool:
     logger.info("开始处理重连逻辑")
-    if "credentials" not in config or "username" not in config["credentials"] or "password" not in config[
+    if "credentials" not in config or "username" not in config["credentials"] or "password_enc" not in config[
         "credentials"]:
         msg = "配置文件中缺少登录凭据，无法自动登录。"
         print(f"[错误] {msg}")
@@ -63,8 +64,22 @@ def handle_relogin(session: requests.Session, config: dict) -> bool:
 
     # 2. 尝试登录
     credentials = config['credentials']
+    username = credentials["username"]
+    enc_blob = credentials.get("password_enc")
     logger.debug(f"使用用户名 {credentials['username']} 尝试自动登录")
-    if perform_auto_login(session, credentials['username'], credentials['password']):
+
+    try:
+        password = decrypt_from_storage(enc_blob)
+        logger.info("密码已成功解密，将用于登录")
+    except Exception as e:
+        msg = f"解密登录密码失败：{e}"
+        print(f"[错误] {msg}")
+        logger.error(msg)
+        send_query_email(config, "[警告] 电费查询失败通知", msg, -1)
+        logger.info("--- 查询脚本运行结束 ---\n")
+        sys.exit(1)
+
+    if perform_auto_login(session, username, password):
         save_cookies(session, COOKIE_FILE)
         logger.info("重连成功并保存新的会话")
         return True
@@ -87,8 +102,22 @@ def send_query_email(config: dict, subject: str, body: str, current_electricity:
         print("[警告] 未配置邮箱通知，无法发送邮件。")
         return  # 直接返回，不做任何事
     if "email_notifier" in config and config["email_notifier"].get("email") and config["email_notifier"].get(
-            "auth_code"):
+            "auth_code_enc"):
         notifier_config = config["email_notifier"]
+
+        enc_blob = notifier_config.get("auth_code_enc")
+        if not enc_blob:
+            print("[警告] 未配置加密的邮箱授权码（auth_code_enc），跳过发送邮件。")
+            logger.warning("未配置加密的邮箱授权码（auth_code_enc），跳过发送邮件。")
+            return
+
+        try:
+            auth_code = decrypt_from_storage(enc_blob)
+            logger.info("邮箱授权码已成功解密")
+        except Exception as e:
+            print(f"[警告] 解密邮箱授权码失败：{e}，跳过发送邮件。")
+            logger.error(f"解密邮箱授权码失败：{e}，跳过发送邮件。")
+            return
 
         # 检查是否设置了通知阈值
         threshold = notifier_config.get("notification_threshold", -1)
@@ -114,7 +143,7 @@ def send_query_email(config: dict, subject: str, body: str, current_electricity:
         print("[信息] 正在发送邮件通知...")
         success, error_msg = send_notification_email(
             sender_email=notifier_config["email"],
-            auth_code=notifier_config["auth_code"],
+            auth_code=auth_code,
             recipient_email=notifier_config["email"],
             subject=subject,
             body=body
@@ -136,7 +165,6 @@ def send_query_email(config: dict, subject: str, body: str, current_electricity:
 # --- 4. 主程序 ---
 if __name__ == "__main__":
     logger.info("--- 查询脚本开始运行 ---")
-
     config = load_config(USER_CONFIG_FILE)
     if not config:
         msg = "因配置文件中房间参数无效或不存在，脚本退出。"
@@ -144,6 +172,13 @@ if __name__ == "__main__":
         print(f"\n[操作建议] 请先运行 setup 来生成 {USER_CONFIG_FILE}。")
         logger.info("--- 查询脚本运行结束 ---\n")
         sys.exit(1)
+
+    try:
+        if migrate_plaintext_to_encrypted(USER_CONFIG_FILE):
+            print("[信息] 已自动将配置中的明文密码/授权码迁移为密文并更新了配置文件。")
+            config = load_config(USER_CONFIG_FILE) or config
+    except Exception as e:
+        logger.warning(f"迁移明文配置为密文时出错: {e}")
 
     selection = config['selection']
 
