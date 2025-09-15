@@ -34,7 +34,7 @@ def perform_login(session) -> tuple[str | None, str | None]:
 
     # 循环直到登录成功
     while True:
-        username = input("请输入用户名: ")
+        username = input("请输入一卡通用户名(学号): ")
         password = pwinput.pwinput(prompt="请输入密码(win粘贴请右键点击): ")
         login_data = {'j_username': username, 'j_password': password, '_csrf': csrf_token}
         try:

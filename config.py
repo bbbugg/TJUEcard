@@ -6,7 +6,7 @@ import os
 """
 
 # 基础URL配置
-BASE_DOMAIN = 'http://59.67.37.10:8180'
+BASE_DOMAIN = 'http://59.67.37.10:8180'  # 等同 https://ecard.tju.edu.cn
 
 # API URL配置
 LOGIN_PAGE_URL = f'{BASE_DOMAIN}/epay/person/index'
