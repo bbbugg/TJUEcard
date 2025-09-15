@@ -6,6 +6,7 @@ import pickle
 import os
 import json
 import logging
+import sys
 import requests
 from bs4 import BeautifulSoup
 from config import LOG_FILE, LOG_FORMAT, LOG_DATE_FORMAT
@@ -32,7 +33,7 @@ def setup_logger(logger_name='TJUEcardLogger'):
         except PermissionError:
             print(f"[错误] 权限不足，无法在 '{LOG_FILE}' 创建日志文件。")
             print("请尝试以管理员身份运行程序。")
-            exit(1)
+            sys.exit(1)
 
     return logger
 
