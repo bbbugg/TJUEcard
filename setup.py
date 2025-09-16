@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 import pwinput
 import requests
@@ -43,23 +44,23 @@ def perform_login(session) -> tuple[str | None, str | None]:
             response.raise_for_status()
             if '<frameset' not in response.text:
                 print("[错误] 登录失败！请检查用户名或密码。")
-                print("[提示] 将重新尝试登录...")
+                print("[提示] 将重新尝试登录...\n")
                 # 继续循环，再次尝试登录
                 continue
             print("[成功] 登录成功！")
             return username, password
         except requests.RequestException as e:
             print(f"[错误] 登录请求失败: {e}")
-            print("[提示] 将重新尝试登录...")
+            print("[提示] 将重新尝试登录...\n")
             # 继续循环，再次尝试登录
             continue
 
-def get_user_choice(options: list) -> dict | None:
+def get_user_choice(options: list, exit_option: bool = False) -> dict | None:
     if not options:
         print("未找到可用选项。")
         return None
     for i, option in enumerate(options): print(f"  [{i + 1}] {option['name']}")
-    print("  [0] 返回上一步/退出")
+    print("  [0] 退出" if exit_option else "  [0] 返回上一步")
     while True:
         try:
             choice = int(input("请输入您的选择 (数字): "))
@@ -180,7 +181,7 @@ def select_electric_system(session: requests.Session) -> dict | None:
             print("[错误] 在页面上未找到指定的电控系统选项。")
             return None
         print("\n--- 请选择电控系统 ---")
-        return get_user_choice(available_options)
+        return get_user_choice(available_options, exit_option=True)
     except requests.RequestException as e:
         print(f"[错误] 访问电控系统选择页面失败: {e}")
         return None
@@ -197,9 +198,11 @@ def save_config_to_json(filename: str, config_data: dict):
 # --- 3. 主程序 ---
 if __name__ == "__main__":
     print("欢迎使用电费查询配置程序 (setup)。")
-    print("本程序将引导您登录、选择房间并配置邮件提醒。")
-    print("说明：您的登录密码与邮箱授权码将以密文对象写入 JSON 配置，")
+    print("本程序将引导您登录、选择房间并配置邮件提醒。\n")
+    print("说明：您的登录密码与邮箱授权码将加密后写入 JSON 配置，")
     print(f"用于解密的本地数据密钥保存在: {get_key_file_path()}（首次保存时自动生成）。请妥善备份该文件。")
+    print("请确保您已经把 TJUEcardSetup 和 TJUEcard 程序都放在了同一个目录下，")
+    print("并且移动到一个相对固定的位置，以后不再移动。\n")
 
     session = requests.Session()
     session.headers.update({
@@ -210,7 +213,7 @@ if __name__ == "__main__":
     username, password = perform_login(session)
     if not username:
         input("按回车键退出。")
-        exit()
+        sys.exit(1)
 
     # 循环以允许用户在邮件测试失败后重试
     email_configured = False
@@ -250,8 +253,8 @@ if __name__ == "__main__":
     while True:
         selected_system = select_electric_system(session)
         if not selected_system:
-            print("用户在主菜单选择退出，程序结束。")
-            exit()
+            input("用户在主菜单选择退出，程序结束。按回车键退出。")
+            sys.exit(0)
 
         selected_sysid = selected_system['id']
         token_page_url = f'{BASE_DOMAIN}/epay/electric/load4electricbill?elcsysid={selected_sysid}'
