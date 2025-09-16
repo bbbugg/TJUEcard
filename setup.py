@@ -229,9 +229,16 @@ if __name__ == "__main__":
 
         if not user_email or not user_auth_code:
             print("[警告] 您未输入邮箱或授权码，将无法使用邮件通知功能。")
-            if input("确实要跳过邮件配置吗？(y/n): ").lower() == 'y':
-                user_email, user_auth_code = None, None  # 明确设置为空
-                break  # 跳出邮件配置循环
+            # 循环直到用户输入有效
+            while True:
+                skip_choice = input("确实要跳过邮件配置吗？(y/n, 回车默认n): ").strip().lower()
+                if skip_choice in ['y', 'n', '']:
+                    break
+                print("[错误] 无效输入，请输入 'y' 或 'n'。")
+
+            if skip_choice == 'y':
+                user_email, user_auth_code = None, None
+                break
             else:
                 continue  # 重新输入
 
@@ -339,9 +346,14 @@ if __name__ == "__main__":
                     print("\n--- 电费通知阈值设置 ---")
                     print("设置后，只有当剩余电量小于等于阈值时才会发送邮件通知。")
                     print("如果不设置，每次查询都会发送邮件通知。")
-                    set_threshold = input("是否需要设置电费通知阈值？(y/n): ").strip().lower()
+                    # 循环直到用户输入有效
+                    while True:
+                        set_threshold = input("是否需要设置电费通知阈值？(y/n, 回车默认y): ").strip().lower()
+                        if set_threshold in ['y', 'n', '']:
+                            break
+                        print("[错误] 无效输入，请输入 'y' 或 'n'。")
 
-                    if set_threshold == 'y':
+                    if set_threshold in ['y', '']:
                         while True:
                             try:
                                 threshold_input = input("请输入电量阈值（单位：度，0-1024，最多两位小数）: ")
@@ -371,11 +383,17 @@ if __name__ == "__main__":
 
                 # 记录当前时间并设置定时任务
                 current_time = datetime.now()
-                print(f"记录执行时间: {current_time.strftime('%H:%M')}")
+                print(f"\n记录执行时间: {current_time.strftime('%H:%M')}")
 
                 # 询问是否设置系统定时任务
-                setup_scheduler = input("\n是否自动设置系统定时任务？(y/n, 默认y): ").strip().lower()
-                if setup_scheduler in ['', 'y', 'yes']:
+                # 循环直到用户输入有效
+                while True:
+                    setup_scheduler = input("是否自动设置系统定时任务？(y/n, 回车默认y): ").strip().lower()
+                    if setup_scheduler in ['y', 'n', '']:
+                        break
+                    print("[错误] 无效输入，请输入 'y' 或 'n'。")
+
+                if setup_scheduler in ['', 'y']:
                     try:
                         # 导入并执行定时任务设置
                         setup_system_scheduler()
