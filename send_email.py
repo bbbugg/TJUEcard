@@ -36,7 +36,9 @@ def send_notification_email(sender_email: str, auth_code: str, recipient_email: 
         if domain == 'qq.com':
             server = smtplib.SMTP_SSL("smtp.qq.com", 465)
         elif domain == '163.com':
-            server = smtplib.SMTP_SSL("imap.163.com", 465)
+            server = smtplib.SMTP_SSL("smtp.163.com", 465)
+        elif domain == 'tju.edu.cn':
+            server = smtplib.SMTP_SSL("smtp.tju.edu.cn", 465)
         else:
             error_msg = f"不支持的邮箱域名: {domain}"
             print(f"[错误] {error_msg}")

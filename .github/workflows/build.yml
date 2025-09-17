@@ -19,6 +19,13 @@ jobs:
             py_arch: x64
             desc: linux-x86_64
 
+          # ===== Linux =====
+          - os: linux
+            arch: arm64
+            runs_on: ubuntu-22.04-arm
+            py_arch: arm64
+            desc: linux-arm64
+
           # ===== Windows =====
           - os: windows
             arch: x86_64
