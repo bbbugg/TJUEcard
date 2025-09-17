@@ -21,7 +21,7 @@
 | 操作系统          | 支持架构                                      |
 |---------------|-------------------------------------------|
 | Windows 10+   | x86_64                                    |
-| Ubuntu 22.04+ | x86_64                                    |
+| Ubuntu 22.04+ | x86_64, arm64                             |
 | ~~macOS 13+~~ | ~~x86_64 (Intel), arm64 (Apple Silicon)~~ |
 
 > ⚠ 其他 Linux 发行版未经验证，不保证能正常使用。
@@ -41,7 +41,7 @@
 
    从 [Releases](https://github.com/bbbugg/TJUEcard/releases) 页面下载适用于您操作系统的最新版本。
     - `TJUEcard-windows-x86_64.zip` 适用于 Windows
-    - `TJUEcard-linux-x86_64.tar.gz` 适用于 Linux
+   - `TJUEcard-linux-x86_64.tar.gz` 或 `TJUEcard-linux-arm64.tar.gz` 适用于 Linux
     - `TJUEcard-macos-arm64.tar.gz` 或 `TJUEcard-macos-x86_64.tar.gz` 适用于 macOS
 
    解压后，Windows系统包含 `TJUEcard.exe` 和 `TJUEcardSetup.exe` 两个文件，Linux和macOS系统则包含 `TJUEcard` 和
@@ -104,21 +104,26 @@
   # 例如，检查 /etc/cron.d 目录：
   cat /etc/cron.d/tjuecard-auto-query
 
-  # 检查 /etc/crontabs/root 文件
+  # 检查 /etc/crontabs/root 文件：
   cat /etc/crontabs/root
 
-  # 检查 /etc/crontab 文件
+  # 检查 /etc/crontab 文件：
   cat /etc/crontab
   ```
 
 - **修改/取消定时任务**
 
   根据任务所在的位置，以管理员权限编辑或删除对应的文件即可。
-    - **如果任务在 `/etc/cron.d/tjuecard-auto-query`**，直接删除该文件即可：
-      ```bash
-      sudo rm /etc/cron.d/tjuecard-auto-query
-      ```
-    - **如果任务在 `/etc/crontabs/root` 或 `/etc/crontab`**，您需要编辑该文件并移除包含 `TJUEcard` 的相关行。
+    - **如果任务在 `/etc/cron.d/tjuecard-auto-query`**：
+        - 修改定时任务：
+          ```bash
+          sudo nano /etc/cron.d/tjuecard-auto-query
+          ```
+        - 删除定时任务：
+          ```bash
+          sudo rm /etc/cron.d/tjuecard-auto-query
+          ```
+    - **如果任务在 `/etc/crontabs/root` 或 `/etc/crontab`**，您需要编辑该文件并修改/移除包含 `TJUEcard` 的相关行。
       ```bash
       # 例如：/etc/crontabs/root 文件
       sudo nano /etc/crontabs/root
