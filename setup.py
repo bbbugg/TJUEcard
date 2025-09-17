@@ -219,11 +219,13 @@ if __name__ == "__main__":
     email_configured = False
     while not email_configured:
         print("\n--- 邮件通知配置 ---")
-        print("您需要提供一个QQ邮箱或163邮箱用于接收通知，以及该邮箱的SMTP授权码。")
+        print("您需要提供一个QQ邮箱或163邮箱或天大邮箱用于接收通知，以及该邮箱的SMTP授权码。")
         print(
             "QQ邮箱：请前往QQ邮箱 -> 设置 -> 账号与安全 -> 安全设置 -> 开启“POP3/IMAP/SMTP/Exchange/CardDAV 服务” -> 生成授权码获取。")
         print(
             "163邮箱：请前往163邮箱 -> 设置 -> POP3/SMTP/IMAP -> 开启“IMAP/SMTP服务”，生成授权码获取。")
+        print(
+            "天大邮箱：请前往天大邮箱 -> 设置 -> 客户端设置 -> 客户端登录（POP3/SMTP/IMAP） -> 开启“IMAP/SMTP协议”，客户端授权密码选择开启“仅客户端授权码”，生成授权密码获取。")
         user_email = input("请输入您的邮箱: ")
         user_auth_code = pwinput.pwinput(prompt="请输入您的邮箱授权码(win粘贴请右键点击): ")
 

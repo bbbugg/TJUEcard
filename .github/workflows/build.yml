@@ -19,7 +19,6 @@ jobs:
             py_arch: x64
             desc: linux-x86_64
 
-          # ===== Linux =====
           - os: linux
             arch: arm64
             runs_on: ubuntu-22.04-arm
@@ -40,6 +39,7 @@ jobs:
             runs_on: macos-13
             py_arch: x64
             desc: macos-x86_64
+
           - os: macos
             arch: arm64
             runs_on: macos-14
