@@ -3,6 +3,7 @@ import platform
 import subprocess
 import sys
 from datetime import datetime
+from typing import List, Optional
 
 
 def get_platform_type():
@@ -195,81 +196,101 @@ def setup_linux_cron(config_path, python_executable):
         return False
 
 
-def setup_macos_launchd(config_path, python_executable):
-    """设置macOS launchd定时任务"""
+CRON_IDENTIFIER = "[TJUEcard-JOB]"  # 唯一标识，用于幂等更新/删除
+
+def _run(cmd: List[str], input_text: Optional[str] = None) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        cmd,
+        input=input_text,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False
+    )
+
+
+def _cron_read(use_root: bool = False) -> str:
+    cmd = (["sudo", "crontab", "-l"] if use_root else ["crontab", "-l"])
+    p = _run(cmd)
+    # 空 crontab 时通常非 0；按空文本处理
+    return "" if p.returncode != 0 else p.stdout
+
+
+def _ensure_nl(s: str) -> str:
+    return s if s.endswith("\n") else s + "\n"
+
+
+def _cron_write(content: str, use_root: bool = False) -> None:
+    cmd = (["sudo", "crontab", "-"] if use_root else ["crontab", "-"])
+    p = _run(cmd, input_text=content)
+    if p.returncode != 0:
+        raise RuntimeError(f"crontab install failed: {p.stderr.strip()}")
+
+
+def setup_unix_cron(config_path: str,
+                    python_executable: str,
+                    schedule: str | None = None,
+                    use_root: bool = False) -> bool:
     try:
-        current_time = datetime.now()
-        hour = current_time.hour
-        minute = current_time.minute
+        now = datetime.now()
+        cron_expr = schedule or f"{now.minute} {now.hour} * * *"
 
-        # 确定要执行的命令
+        # 1) 组装命令：把 PATH 放到命令里，避免顶部环境行不被支持
         if getattr(sys, 'frozen', False):
-            # 打包后的可执行文件
-            executable_path = os.path.abspath(sys.executable)
-            executable_dir = os.path.dirname(executable_path)
-            main_executable = os.path.join(executable_dir, 'TJUEcard')
-            program_arguments = f'<string>{main_executable}</string>'
-            task_command = f'\"{main_executable}\"'
+            exe_path = os.path.abspath(sys.executable)
+            exe_dir = os.path.dirname(exe_path)
+            main_exe = os.path.join(exe_dir, 'TJUEcard' + ('.exe' if platform.system().lower()=="windows" else ""))
+            base_cmd = f'/bin/sh -lc "PATH=/usr/local/bin:/usr/bin:/bin {main_exe}"'
         else:
-            # 作为脚本运行
-            main_py_path = os.path.abspath(config_path)
-            program_arguments = f'<string>{python_executable}</string>\n        <string>{main_py_path}</string>'
-            task_command = f'\"{python_executable}\" \"{main_py_path}\"'
+            base_cmd = f'/bin/sh -lc "PATH=/usr/local/bin:/usr/bin:/bin {python_executable} {config_path}"'
 
-        # 创建plist文件内容
-        plist_content = f'''<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.tjuecard.automatic</string>
-    <key>ProgramArguments</key>
-    <array>
-{program_arguments}
-    </array>
-    <key>StartCalendarInterval</key>
-    <dict>
-        <key>Hour</key>
-        <integer>{hour}</integer>
-        <key>Minute</key>
-        <integer>{minute}</integer>
-    </dict>
-    <key>RunAtLoad</key>
-    <false/>
-</dict>
-</plist>'''
+        cron_line = f"{cron_expr} {base_cmd} >> /var/tmp/tjuecard.log 2>&1 # {CRON_IDENTIFIER}"
 
-        # 为了让任务在用户未登录时也能运行，需要将plist文件放在 /Library/LaunchDaemons/
-        # 这需要管理员权限（sudo）
-        plist_path = "/Library/LaunchDaemons/com.tjuecard.automatic.plist"
-        print(f"将在以下路径创建macOS后台任务配置文件: {plist_path}")
-        print("这需要管理员权限，如果脚本运行失败，请尝试使用 'sudo' 再次运行。")
+        # 2) 读取现有 crontab，移除旧的同标识
+        current = _cron_read(use_root=use_root)
+        lines = [l for l in current.splitlines() if l.strip()]
+        lines = [l for l in lines if 'TJUEcard' not in l]
 
-        # 'w'模式会直接覆盖旧的plist文件
-        with open(plist_path, 'w', encoding='utf-8') as f:
-            f.write(plist_content)
+        # 3) 先尝试“带 header”版本（在支持的系统上更清晰）
+        header = []
+        # 只有在“看起来像 Vixie/Crond”时才加；BusyBox 常见出错，先允许加，失败再降级
+        if "SHELL=" in current or "MAILTO=" in current:
+            header = []  # 已经有就不重复
+        else:
+            header = ["SHELL=/bin/sh", "MAILTO="]
 
-        # 为了确保更新生效，先尝试卸载已存在的服务（忽略错误），然后再加载
-        print("正在重新加载任务定义...")
-        unload_command = ["launchctl", "unload", plist_path]
-        subprocess.run(unload_command, capture_output=True, text=True, check=False)
+        content_with_header = ""
+        if header:
+            content_with_header += "\n".join(header) + "\n"
+        if lines:
+            content_with_header += "\n".join(lines) + "\n"
+        content_with_header += cron_line + "\n"
 
-        # 加载新的任务定义
-        load_command = ["launchctl", "load", plist_path]
-        result = subprocess.run(load_command, capture_output=True, text=True, check=False)
-
-        if result.returncode == 0 or "already loaded" in result.stderr:
-            print(f"macOS定时任务创建成功！")
-            print(f"   执行时间: 每天 {hour:02d}:{minute:02d}")
-            print(f"   执行命令: {task_command}")
+        try:
+            _cron_write(_ensure_nl(content_with_header), use_root=use_root)
+            print("cron 定时任务创建/更新成功！（带 header）")
+            print(f"  Cron表达式: {cron_expr}")
+            print(f"  执行命令: {base_cmd}")
             return True
-        else:
-            print(f"macOS定时任务创建失败:")
-            print(f"   {result.stderr}")
-            return False
+        except Exception as e:
+            msg = str(e)
+            # BusyBox 常见报错：“bad minute”且第一行是 SHELL=...
+            if "bad minute" in msg or "errors in crontab file" in msg:
+                # 4) 降级：去掉 header，重新写入
+                content_no_header = ""
+                if lines:
+                    content_no_header += "\n".join(lines) + "\n"
+                content_no_header += cron_line + "\n"
+                _cron_write(_ensure_nl(content_no_header), use_root=use_root)
+                print("cron 定时任务创建/更新成功！（已自动去掉 header 兼容 BusyBox）")
+                print(f"  Cron表达式: {cron_expr}")
+                print(f"  执行命令: {base_cmd}")
+                return True
+            else:
+                raise
 
     except Exception as e:
-        print(f"macOS定时任务设置出错: {e}")
+        print(f"设置 cron 失败: {e}")
         return False
 
 
@@ -305,7 +326,7 @@ def setup_system_scheduler():
     elif current_platform == "linux":
         success = setup_linux_cron(config_path, python_executable)
     elif current_platform == "macos":
-        success = setup_macos_launchd(config_path, python_executable)
+        success = setup_unix_cron(config_path, python_executable)
     else:
         print("[错误] 不支持的操作系统类型")
         return False
