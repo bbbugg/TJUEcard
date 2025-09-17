@@ -75,7 +75,7 @@ jobs:
         run: |
           mkdir -p dist
           pyinstaller --onefile --name TJUEcardSetup setup.py
-          pyinstaller --onefile --noconsole --name TJUEcard main.py
+          pyinstaller --onefile --noconsole --name TJUEcard TJUEcard_main.py
         shell: bash
 
       # ===== 验证架构 =====

@@ -28,7 +28,7 @@
 
 ### 邮箱
 
-目前支持 QQ 邮箱和 163 邮箱（SMTP）。
+目前支持 QQ邮箱、 163邮箱 和 天大邮箱（SMTP）。
 
 ### 网络
 
@@ -94,24 +94,38 @@
 
 - **查询定时任务**
 
-  脚本会将定时任务添加到系统级的 `/etc/crontab` 文件中。您可以使用以下命令查看内容：
+  脚本会自动检测系统环境，并将定时任务添加到合适的位置。通常情况下，任务配置文件会创建在以下三个位置之一：
+    - `/etc/cron.d/tjuecard-auto-query` (推荐方式，单个文件)
+    - `/etc/crontabs/root` (用于 OpenWrt/Alpine 等系统)
+    - `/etc/crontab` (传统方式，追加到文件末尾)
 
+  您可以依次检查这些文件来找到任务配置。
   ```bash
+  # 例如，检查 /etc/cron.d 目录：
+  cat /etc/cron.d/tjuecard-auto-query
+
+  # 检查 /etc/crontabs/root 文件
+  cat /etc/crontabs/root
+
+  # 检查 /etc/crontab 文件
   cat /etc/crontab
   ```
 
 - **修改/取消定时任务**
 
-  您需要以管理员权限编辑 `/etc/crontab` 文件来移除任务。
-
-    1. 使用文本编辑器（如 `nano` 或 `vim`）打开文件：
-
-       ```bash
-       sudo nano /etc/crontab
-       ```
-
-    2. 在编辑器中，找到并修改/删除包含 `tjuecard` 的那一行。
-    3. 保存并退出编辑器。
+  根据任务所在的位置，以管理员权限编辑或删除对应的文件即可。
+    - **如果任务在 `/etc/cron.d/tjuecard-auto-query`**，直接删除该文件即可：
+      ```bash
+      sudo rm /etc/cron.d/tjuecard-auto-query
+      ```
+    - **如果任务在 `/etc/crontabs/root` 或 `/etc/crontab`**，您需要编辑该文件并移除包含 `TJUEcard` 的相关行。
+      ```bash
+      # 例如：/etc/crontabs/root 文件
+      sudo nano /etc/crontabs/root
+  
+      # /etc/crontab 文件
+      sudo nano /etc/crontab
+      ```
 
 #### macOS
 
@@ -150,7 +164,7 @@
 - 定时任务的执行时间是根据您运行 `TJUEcardSetup` 程序的时间确定的，每天在您设置的时间运行一次。
 - 如果您移动了程序的位置或更改了文件名，定时任务可能会失效，需要重新运行 `TJUEcardSetup` 进行配置，或者手动修改定时任务的配置文件。
 - 如需重新配置用户密码、邮箱、查询房间，请重新运行 `TJUEcardSetup` 进行配置。
-- 重复运行 `TJUEcardSetup` 时，先前的配置会被自动覆盖。**Linux重复设置定时任务不会覆盖**，请按照上方Linux删除定时任务的教程，删除重复的定时任务。
+- 重复运行 `TJUEcardSetup` 时，先前的配置会被自动覆盖。
 - 请勿在多个计算机上运行 `TJUEcardSetup` 程序，同一个账号只能同时在一个计算机上保持登录状态，否则每次查询都会自动重新登录。
 
 ## 💡常见问题
@@ -173,5 +187,5 @@
 - [ ] macOS 的定时任务存在已知问题，预计在下个版本修复。
 - [x] 敏感信息目前还是明文存储，预计在下个版本改成加密存储。
 - [ ] 考虑支持多房间的查询。
-- [ ] Linux重复运行Setup程序不会覆盖之前的定时任务。
-- [ ] 考虑支持更多Linux版本的定时任务配置。
+- [x] Linux重复运行Setup程序不会覆盖之前的定时任务。
+- [x] 考虑支持更多Linux版本的定时任务配置。

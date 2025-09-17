@@ -9,6 +9,7 @@ from config import (
     LOGIN_PAGE_URL, LOGIN_URL, LOAD_ELECTRIC_INDEX_URL, DEFAULT_HEADERS
 )
 from crypto_store import decrypt_from_storage, migrate_plaintext_to_encrypted, get_key_file_path
+from scheduler_setup import check_and_update_cron  # 导入用于检查和更新定时任务的函数
 
 # --- 1. 日志配置 ---
 logger = setup_logger('TJUEcardQuery')
@@ -164,6 +165,9 @@ def send_query_email(config: dict, subject: str, body: str, current_electricity:
 
 # --- 4. 主程序 ---
 if __name__ == "__main__":
+    if not check_and_update_cron():
+        logger.warning("迁移Linux定时任务设置失败。")
+
     logger.info("--- 查询脚本开始运行 ---")
     config = load_config(USER_CONFIG_FILE)
     if not config:
