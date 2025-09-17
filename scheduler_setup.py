@@ -196,7 +196,7 @@ def setup_linux_cron(config_path, python_executable):
         return False
 
 
-CRON_IDENTIFIER = "[TJUEcard-JOB]"  # 唯一标识，用于幂等更新/删除
+CRON_IDENTIFIER = "TJUEcard Auto Query Job"
 
 def _run(cmd: List[str], input_text: Optional[str] = None) -> subprocess.CompletedProcess:
     return subprocess.run(
@@ -239,12 +239,12 @@ def setup_unix_cron(config_path: str,
         if getattr(sys, 'frozen', False):
             exe_path = os.path.abspath(sys.executable)
             exe_dir = os.path.dirname(exe_path)
-            main_exe = os.path.join(exe_dir, 'TJUEcard' + ('.exe' if platform.system().lower()=="windows" else ""))
+            main_exe = os.path.join(exe_dir, 'TJUEcard')
             base_cmd = f'/bin/sh -lc "PATH=/usr/local/bin:/usr/bin:/bin {main_exe}"'
         else:
             base_cmd = f'/bin/sh -lc "PATH=/usr/local/bin:/usr/bin:/bin {python_executable} {config_path}"'
 
-        cron_line = f"{cron_expr} {base_cmd} >> /var/tmp/tjuecard.log 2>&1 # {CRON_IDENTIFIER}"
+        cron_line = f"{cron_expr} {base_cmd} # {CRON_IDENTIFIER}"
 
         # 2) 读取现有 crontab，移除旧的同标识
         current = _cron_read(use_root=use_root)
