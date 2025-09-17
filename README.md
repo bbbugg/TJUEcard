@@ -2,6 +2,20 @@
 
 本工具可以自动查询天津大学电费信息，并在电费低于阈值的时候发送邮件提醒，解决了没及时充电费，导致半夜突然停电的痛点。
 
+![Tianjin University](https://img.shields.io/badge/天津大学-blue?logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAC4jAAAuIwF4pT92AAAD5UlEQVRYhbWX/1XkRgzHP+cGMqkAp4JzKsBbwdkVLFsBt24AaMCwFcBWYKiApQJ8FZypIFNC/pCE5F1fwt1L9J6fxzMa6atfM/InPkptXwENcA7UQAaSrtr4ALwAjwzd+BGxnz6g+AK4VAX2ZF2NAOL3pHM7hu7h1wC0fQncM7d2wq2clLMCRqAEPiNeKoOkA7Bh6CYWaBlA2zfAbRB0APY6/qJK98AZcKEAJ32elG+t4NH5LUP3+O8AxOX3+pWBG32vcS+YorWCLAN/iXjkRse3eGg2xyGZAxDLBxWQgG1QbEoOKtyEmtIa+A3xSAIe9b3Hc6gE2ugJByAxf1amCdjgYci4G8ewJwFpFl+plksFAvCgIG6R0E3AyvYUwf57PMNb/a50bqfIo/Ia+A68queEhGerMibEM1/UoKzyLMTqgXncze0lEoodQ/dI2xugrHw18/Kb9EnAyNBt1Btr4A2pkDfgSvdsGLoH88Al7uasigCeVHlCysvm66A46bjUdwU0tH1Sb1gO1HgZm04KRWmCbhRhRk6zO2VucKqZUw5PXJM9AuKgAC/xck60fVUoY8I9YLQL43Pc3cZjlgjYuXVZ90RZGffgpICaQhmTCqmU8XB0lr/hLk5BgFGNhwJde3v/ElkG8jwAPS/wZPqmiyNz62HornV+Yp4r0RrC96h7Ir0E3hfdXxdB0IiEo+GY2v4v/MRLiKeqIDiS8MmeSBNibBV05gJ3XYUcGpllMr4JKzWhM+anYeQ9pglPSIBUHDHYwjGIaQGI8TYL/OBxjpQCfwI5CW3zyPzMjzQGvuP1pT35B6Cm8GQWQpDwXIj0xCmlhbl/2lPhp2tpMgrEVQk5Krd4Y+Ekt9fI3KoJD03Gc0LGp3f/GVKKGS/9Q4GXRBMENXpCRtpyWuslHs93q5TXSWTtde0FT9aXIqAyIRVSDZczIXKYbDj1RDp6bxYa0jV+u2b8yn8slDnrc4UdQkO34Zikm9nx4/ifdDxK31S+XUyib+hGK0MTWurCqXJpWAzEinn8J6TJeFDemra/ngEfuhV+YSXk4pt1RM/46bZ6d6M0G+fAV6QjutP5pHMAdwxdDvO3SEf0e5ivkI4LJElXMO+IYsfyTNsnFbZGEnQVlF+rkjs986vgoRwMaQKo2HG9e9gBSI9m2ZuBV6Bk6Fq8Mza6QlxZh7khjO3Oz8HypHPb2EN+rC33xsSst075T4Zuou1fdXUX8qDEm1NTfpKkx3eBJZk1lAC3tH1sPO907Y9gyZ55EjZqxFe8f2iXKuS/+DUzKvEf1zLMH/jpX7M5kAt+/ef0Zul37OcAOJCK/+H3/G/eUp/uk1Z4CgAAAABJRU5ErkJggg==&labelColor=000000)
+![Cron](https://img.shields.io/badge/%F0%9F%95%9B-daily-blue?style=flat&labelColor=000000)
+![Alert Type](https://img.shields.io/badge/📧-email-blue?style=flat&labelColor=000000)
+![Python 3.12](https://img.shields.io/badge/python%203.12-3776AB?style=flat&logo=python&label=&labelColor=000000)
+![PyInstaller](https://img.shields.io/badge/PyInstaller-blue?style=flat&logo=pypi&label=&labelColor=000000)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/bbbugg/TJUEcard)<br/>
+![Stars](https://img.shields.io/github/stars/bbbugg/TJUEcard?style=flat&logo=github&logoColor=red&color=blue&labelColor=000000)
+![Forks](https://img.shields.io/github/forks/bbbugg/TJUEcard?style=flat&logo=github&logoColor=orange&color=blue&labelColor=000000)
+![Issues](https://img.shields.io/github/issues/bbbugg/TJUEcard?style=flat&logo=github&logoColor=yellow&color=blue&labelColor=000000)
+![PRs](https://img.shields.io/github/issues-pr/bbbugg/TJUEcard?style=flat&logo=github&logoColor=green&color=blue&labelColor=000000)
+![Contributors](https://img.shields.io/github/contributors/bbbugg/TJUEcard?style=flat&logo=github&logoColor=00FFFF&color=blue&labelColor=000000)
+![Release](https://img.shields.io/github/v/release/bbbugg/TJUEcard?style=flat&logo=github&logoColor=blue&color=blue&labelColor=000000)
+![Release Date](https://img.shields.io/github/release-date/bbbugg/TJUEcard?style=flat&logo=github&logoColor=EE82EE&color=blue&labelColor=000000)
+
 ## ⭐ 主要功能
 
 🔍 自动化电费查询。
