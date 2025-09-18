@@ -66,7 +66,7 @@
 | 操作系统          | 支持架构                                      |
 |---------------|-------------------------------------------|
 | Windows 10+   | x86_64                                    |
-| Ubuntu 22.04+ | x86_64, arm64                             |
+| Ubuntu 22.04+ | x86_64, arm64, x86, arm32v7               |
 | ~~macOS 13+~~ | ~~x86_64 (Intel), arm64 (Apple Silicon)~~ |
 
 > ⚠ 其他 Linux 发行版未经验证，不保证能正常使用。
@@ -181,31 +181,24 @@
 
 - **查询定时任务**
 
-  打开终端，输入以下命令查看当前 root 用户的 `LaunchAgent` 任务列表：
+  打开终端，输入以下命令查看当前 root 用户的 `crontab` 任务列表：
 
   ```zsh
-  sudo launchctl list
+  sudo crontab -l
   ```
 
 - **取消定时任务**
 
-    1. 使用 `launchctl bootout` 命令停止并移除任务：
+  打开终端，输入以下命令编辑当前 root 用户的 `crontab` 文件，并移除包含 `TJUEcard` 的相关行：
+   ```zsh
+   sudo crontab -e
+   ```
 
-       ```zsh
-       sudo launchctl bootout system /Library/LaunchDaemons/com.tjuecard.automatic.plist
-       ```
+  验证是否已移除：
 
-    2. 找到对应的配置文件并删除：
-
-       ```zsh
-       sudo rm /Library/LaunchDaemons/com.tjuecard.automatic.plist
-       ```
-
-    3. 验证是否已移除：
-
-       ```zsh
-       sudo launchctl list | grep tjuecard
-       ```
+   ```zsh
+   sudo crontab -l | grep TJUEcard
+   ```
 
 ## ❗注意事项
 

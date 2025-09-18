@@ -12,6 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # ----- Native Builds -----
           # ===== Linux =====
           - os: linux
             arch: x86_64
@@ -46,6 +47,20 @@ jobs:
             py_arch: arm64
             desc: macos-arm64
 
+          # ----- Emulated Builds (都运行在 ubuntu-22.04 x86_64 上) -----
+          - os: linux
+            arch: x86
+            runs_on: ubuntu-22.04
+            desc: linux-x86
+            image: i386/debian:12
+            platform: linux/386
+          - os: linux
+            arch: armv7
+            runs_on: ubuntu-22.04
+            desc: linux-armv7
+            image: arm32v7/ubuntu:22.04
+            platform: linux/arm/v7
+
     runs-on: ${{ matrix.runs_on }}
 
     permissions:
@@ -57,26 +72,95 @@ jobs:
         with:
           fetch-depth: 0
 
-      # 安装对应架构的 Python
-      - name: Set up Python
+      # ===================================================================
+      #  分支 1: Native Builds (x86_64, arm64, windows, macos)
+      # ===================================================================
+      - name: Set up Python (Native)
+        if: "!matrix.image" # 只在没有定义 matrix.image 的原生构建上运行
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           architecture: ${{ matrix.py_arch }}
 
-      - name: Install dependencies
+      - name: Install dependencies (Native)
+        if: "!matrix.image"
         run: |
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install pyinstaller
         shell: bash
 
-      - name: Build with PyInstaller
+      - name: Build with PyInstaller (Native)
+        if: "!matrix.image"
         run: |
           mkdir -p dist
           pyinstaller --onefile --name TJUEcardSetup setup.py
           pyinstaller --onefile --noconsole --name TJUEcard TJUEcard_main.py
         shell: bash
+
+      # ===================================================================
+      #  分支 2: Emulated Builds (x86, armv7)
+      # ===================================================================
+      - name: Set up QEMU
+        if: "matrix.image"
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build with PyInstaller (Emulated)
+        if: "matrix.image"
+        run: |
+          # 根据 matrix.arch 的值，决定 PIP_FLAG 的内容
+          PIP_FLAG_VALUE=""
+          if [ "${{ matrix.arch }}" = "x86" ]; then
+            PIP_FLAG_VALUE="--break-system-packages"
+          fi
+
+          # 将 PIP_FLAG_VALUE 作为环境变量传入容器
+          docker run --rm --privileged \
+            --platform ${{ matrix.platform }} \
+            -v "${{ github.workspace }}":/workspace \
+            -w /workspace \
+            -e PIP_FLAG="${PIP_FLAG_VALUE}" \
+            ${{ matrix.image }} \
+            sh -c ' \
+              set -ex; \
+              apt-get update; \
+              apt-get install -y \
+                python3 \
+                python3-pip \
+                git \
+                build-essential \
+                libffi-dev \
+                python3-cryptography; \
+              \
+              ln -s /usr/bin/python3 /usr/bin/python || true; \
+              \
+              # 直接使用从外部传入的 PIP_FLAG 环境变量
+              python -m pip install --upgrade pip ${PIP_FLAG}; \
+              \
+              if [ -f requirements.txt ]; then \
+                if [ "${{ matrix.arch }}" = "x86" ]; then \
+                  echo "==> i386 environment: Installing dependencies from requirements.txt, excluding cryptography"; \
+                  grep -v "^cryptography" requirements.txt | xargs -r python -m pip install ${PIP_FLAG}; \
+                else \
+                  echo "==> armv7 environment: Installing all dependencies from requirements.txt"; \
+                  python -m pip install -r requirements.txt ${PIP_FLAG}; \
+                fi; \
+              fi; \
+              \
+              pip install pyinstaller ${PIP_FLAG}; \
+              \
+              pyinstaller --onefile --name TJUEcardSetup setup.py; \
+              pyinstaller --onefile --noconsole --name TJUEcard TJUEcard_main.py \
+            '
+
+      - name: Fix file ownership
+        if: "matrix.image" # 只在 Emulated 构建后运行
+        run: |
+          # The files created inside the container are owned by root.
+          # Change ownership to the current runner user to avoid permission errors.
+          sudo chown -R "$(id -u):$(id -g)" .
+        shell: bash
+      # ============ 从这里开始，所有分支的步骤合并 ============
 
       # ===== 验证架构 =====
       - name: Check binary arch (Linux)
