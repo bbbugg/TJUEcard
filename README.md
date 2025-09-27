@@ -86,7 +86,7 @@
 
    从 [Releases](https://github.com/bbbugg/TJUEcard/releases) 页面下载适用于您操作系统的最新版本。
     - `TJUEcard-windows-x86_64.zip` 适用于 Windows
-   - `TJUEcard-linux-x86_64.tar.gz` 或 `TJUEcard-linux-arm64.tar.gz` 适用于 Linux
+   - `TJUEcard-linux-*.tar.gz` 适用于 Linux
     - `TJUEcard-macos-arm64.tar.gz` 或 `TJUEcard-macos-x86_64.tar.gz` 适用于 macOS
 
    解压后，Windows系统包含 `TJUEcard.exe` 和 `TJUEcardSetup.exe` 两个文件，Linux和macOS系统则包含 `TJUEcard` 和
