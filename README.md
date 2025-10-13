@@ -139,7 +139,7 @@
 
 - **提交 Pull Request**: 如果您修复了 bug 或实现了新功能，欢迎提交 PR。
 - **创建 Issue**: 如果您有任何建议或发现了问题，请在 [GitHub Issue](https://github.com/bbbugg/TJUEcard/issues) 页面进行讨论。
-- **参与开发**: 如果您对项目开发感兴趣，欢迎邮件联系我们。邮箱：[daming20120101@163.com](mailto:daming20120101@163.com)
+- **参与开发**: 如果您对项目开发感兴趣，欢迎邮件联系我们。邮箱：[headfirstbbbugg@gmail.com](mailto:headfirstbbbugg@gmail.com)
 
 ## 📋 待办事项
 
