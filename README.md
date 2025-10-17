@@ -43,7 +43,8 @@
      <img src="https://img.shields.io/github/v/release/bbbugg/TJUEcard?style=flat&logo=github&logoColor=blue&color=blue&labelColor=grey"/></a>
 
    <a href="https://github.com/bbbugg/TJUEcard/releases/latest">
-     <img src="https://img.shields.io/github/release-date/bbbugg/TJUEcard?style=flat&logo=github&logoColor=EE82EE&color=EE82EE&labelColor=grey"/></a>
+     <img src="https://img.shields.io/github/downloads/bbbugg/TJUEcard/total?style=flat&logo=github&logoColor=EE82EE&color=EE82EE&labelColor=grey"/></a>
+
 </p>
 
 ## ⭐ 主要功能
@@ -83,23 +84,27 @@
 
 1. **下载**
 
-   从 [Releases](https://github.com/bbbugg/TJUEcard/releases) 页面下载适用于您操作系统的最新版本。
-    - `TJUEcard-windows-x86_64.zip` 适用于 Windows
-    - `TJUEcard-linux-*.tar.gz` 适用于 Linux
-    - `TJUEcard-macos-arm64.tar.gz` 或 `TJUEcard-macos-x86_64.tar.gz` 适用于 macOS
+   请选择适用您操作系统的下载版本。
+    - Windows: [Windows x86_64](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-windows-x86_64-v0.1.5.zip)
+    - Linux: [Linux x86_64](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-linux-x86_64-v0.1.5.tar.gz)
+      或 [Linux arm64](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-linux-arm64-v0.1.5.tar.gz)
+      或 [Linux x86](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-linux-x86-v0.1.5.tar.gz)
+      或 [Linux arm32v7](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-linux-arm32-v0.1.5.tar.gz)
+    - macOS: [macOS x86_64](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-macos-x86_64-v0.1.5.tar.gz)
+      或 [macOS arm64](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-macos-arm64-v0.1.5.tar.gz)
 
    解压后，Windows系统包含 `TJUEcard.exe` 和 `TJUEcardSetup.exe` 两个文件，Linux和macOS系统则包含 `TJUEcard` 和
    `TJUEcardSetup`。**请确保这两个文件在同一目录下。并且移动到一个相对固定的位置，以后不再移动。**
 
 2. **配置**
 
-    - **Windows**: 管理员权限运行 `TJUEcardSetup.exe`。
+    - **Windows**: **管理员权限**运行 `TJUEcardSetup.exe`。
     - **Linux/macOS**: 在终端中运行 `sudo ./TJUEcardSetup`。
 
    运行 TJUEcardSetup 时，程序会引导您进行配置，包括**一卡通用户名**、**一卡通密码**、用于接收邮件的邮箱和授权码等信息。配置成功后，会在程序同目录下生成
-   `TJUEcard_user_config.json` 文件。
+   `TJUEcard_user_config.json` 配置文件。
 
-   > 若不确定一卡通的账号密码，请[验证或找回](https://ecard.tju.edu.cn/epay/person/index)
+   > 若不确定一卡通的账号密码，请[验证或找回](https://github.com/bbbugg/TJUEcard/issues/3)
 
 3. **定时任务**
 
@@ -113,7 +118,7 @@
 
 ### 定时任务管理
 
-查看文档：[定时任务管理](docs/scheduled_tasks.md)
+查看文档：[定时任务管理](https://github.com/bbbugg/TJUEcard/issues/4)
 
 ## ❗注意事项
 
@@ -129,9 +134,9 @@
 
 - **程序会一直在后台运行吗？** 不会。程序只会在定时任务触发时自动运行，平时不会常驻后台或持续占用系统资源。
 - **定时任务设置失败**：请以管理员权限运行 `TJUEcardSetup` 程序。
-- **定时任务未执行**：请检查定时任务的设置和日志以及 `TJUEcard.log`日志文件。
+- **定时任务未执行**：请检查[定时任务管理](https://github.com/bbbugg/TJUEcard/issues/4)以及 `TJUEcard.log` 日志文件。
 - **邮件未收到**：请检查您的邮箱配置是否正确，以及垃圾邮件，并查看 `TJUEcard.log` 日志文件。
-- **程序报错**：请在 [GitHub Issues](https://github.com/bbbugg/TJUEcard/issues) 中提交您的问题，并附上详细的错误信息。
+- **程序报错**：请新建 [GitHub Issues](https://github.com/bbbugg/TJUEcard/issues/new) 提交您的问题，并附上详细的错误信息。
 
 ## 🤝 贡献
 
@@ -139,7 +144,8 @@
 
 - **提交 Pull Request**: 如果您修复了 bug 或实现了新功能，欢迎提交 PR。
 - **创建 Issue**: 如果您有任何建议或发现了问题，请在 [GitHub Issue](https://github.com/bbbugg/TJUEcard/issues) 页面进行讨论。
-- **参与开发**: 如果您对项目开发感兴趣，欢迎邮件联系我们。邮箱：[headfirstbbbugg@gmail.com](mailto:headfirstbbbugg@gmail.com)
+- **参与开发**:
+  如果您对项目开发感兴趣，欢迎邮件联系我们。邮箱：[headfirstbbbugg@gmail.com](mailto:headfirstbbbugg@gmail.com)
 
 ## 📋 待办事项
 

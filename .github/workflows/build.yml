@@ -284,37 +284,37 @@ jobs:
             const compareUrl = previous
               ? `https://github.com/${owner}/${repo}/compare/${previous}...${tag}`
               : `https://github.com/${owner}/${repo}/releases/tag/${tag}`;
-
-            // 提交列表（过滤 merge 提交）
-            let lines = [];
-            if (previous) {
-              try {
-                const cmpRes = await github.rest.repos.compareCommitsWithBasehead({
-                  owner, repo, basehead: `${previous}...${tag}`,
-                });
-                const commits = cmpRes.data.commits || [];
-                const filtered = commits.filter(c => {
-                  const isMergeByParents = (c.parents?.length || 1) > 1;
-                  const isMergeByMsg = /^Merge( |:)/.test(c.commit.message || '');
-                  return !isMergeByParents && !isMergeByMsg;
-                });
-                for (const c of filtered) {
-                  const sha = (c.sha || '').slice(0, 7);
-                  const msg = (c.commit?.message || '').split('\n')[0];
-                  if (msg && sha) lines.push(`- ${sha} ${msg}`);
-                }
-              } catch (e) {
-                core.warning(`compareCommits failed: ${e.message}`);
-              }
-            }
+            
+            #            // 提交列表（过滤 merge 提交）
+            #            let lines = [];
+            #            if (previous) {
+            #              try {
+            #                const cmpRes = await github.rest.repos.compareCommitsWithBasehead({
+            #                  owner, repo, basehead: `${previous}...${tag}`,
+            #                });
+            #                const commits = cmpRes.data.commits || [];
+            #                const filtered = commits.filter(c => {
+            #                  const isMergeByParents = (c.parents?.length || 1) > 1;
+            #                  const isMergeByMsg = /^Merge( |:)/.test(c.commit.message || '');
+            #                  return !isMergeByParents && !isMergeByMsg;
+            #                });
+            #                for (const c of filtered) {
+            #                  const sha = (c.sha || '').slice(0, 7);
+            #                  const msg = (c.commit?.message || '').split('\n')[0];
+            #                  if (msg && sha) lines.push(`- ${sha} ${msg}`);
+            #                }
+            #              } catch (e) {
+            #                core.warning(`compareCommits failed: ${e.message}`);
+            #              }
+            #            }
 
             // 日期（YYYY-MM-DD），加粗，使用小号字体；与标题紧邻一行
             const dateStr = new Date().toISOString().slice(0, 10);
             const dateLine = `<sub>Released on <strong>${dateStr}</strong></sub>`;
 
             // 标题为加粗可点击链接；与日期紧邻（无空行）；日期与 Commits 之间空一行
-            let body = `[**Version ${displayTag}**](${compareUrl})\n${dateLine}\n\n`;
-            body += 'Commits:\n' + (lines.length ? lines.join('\n') : '- Initial release') + '\n';
+                    let body = `[**Version ${displayTag} Changelog**](${compareUrl})\n${dateLine}\n\n`;
+            #            body += 'Commits:\n' + (lines.length ? lines.join('\n') : '- Initial release') + '\n';
 
             core.setOutput('body', body);
 
