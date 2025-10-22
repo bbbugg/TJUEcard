@@ -1,39 +1,134 @@
-name: Sync GitHub Releases to Gitee
+name: Sync GitHub Release to Gitee
+
 on:
   release:
     types: [published]
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
+
 jobs:
   sync:
     runs-on: ubuntu-latest
+    env:
+      GITEE_OWNER: ${{ secrets.GITEE_USER_NAME }}
+      GITEE_REPO: TJUEcard
+      GITEE_API: https://gitee.com/api/v5
     steps:
-      - name: Checkout code
+      - name: Checkout (not strictly needed)
         uses: actions/checkout@v4
 
-      - name: Install SSH Client
-        run: sudo apt-get install -y openssh-client
-
-      - name: Configure SSH
+      - name: Prepare tools
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.GITEE_SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan gitee.com >> ~/.ssh/known_hosts
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+
+      - name: Capture release context
+        id: ctx
+        run: |
+          # 事件 JSON 保存下来, 后续用 jq 统一解析
+          echo '${{ toJson(github.event.release) }}' > release.json
+
+          TAG=$(jq -r '.tag_name' release.json)
+          NAME=$(jq -r '.name // empty' release.json)
+          BODY=$(jq -r '.body // empty' release.json)
+
+          echo "tag=$TAG"   >> $GITHUB_OUTPUT
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          # 将换行安全地转为 \n, 便于传给 curl
+          BODY_ESCAPED=$(jq -r @json <<<"$BODY")
+          echo "body=$BODY_ESCAPED" >> $GITHUB_OUTPUT
+
+      - name: Download ALL assets from this GitHub Release
         env:
-          GITEE_SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_PRIVATE_KEY }}
-
-      - name: Clone Gitee Repository
-        run: git clone git@gitee.com:ibenzene/TJUEcard.git
-
-      - name: Sync Release Assets
+          GH_TOKEN: ${{ github.token }}
         run: |
-          cd TJUEcard
-          # 下载 GitHub Release 文件
-          wget -O asset.zip "${{ github.event.release.assets[0].browser_download_url }}"
+          mkdir -p assets
+          ASSETS=$(jq -c '.assets[] | {name: .name, url: .browser_download_url}' release.json)
+          if [ -z "$ASSETS" ]; then
+            echo "No assets found on this release."
+          else
+            echo "$ASSETS" | while read -r item; do
+              NAME=$(jq -r '.name' <<<"$item")
+              URL=$(jq -r '.url'  <<<"$item")
+              echo "Downloading $NAME ..."
+              curl -fL --retry 3 -o "assets/$NAME" "$URL"
+            done
+          fi
 
-          # 提交到 Gitee
-          git config --global user.email "${{ secrets.GITEE_USER_EMAIL }}"
-          git config --global user.name "${{ secrets.GITEE_USER_NAME }}"
-          git add .
-          git commit -m "Sync Release: ${{ github.event.release.tag_name }}"
-          git push origin main
+      - name: Ensure Release exists on Gitee (create if missing)
+        id: gitee_release
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG='${{ steps.ctx.outputs.tag }}'
+          NAME='${{ steps.ctx.outputs.name }}'
+          BODY_JSON='${{ steps.ctx.outputs.body }}'   # 已是 JSON 字符串
+
+          echo "Ensuring release for tag $TAG on Gitee ..."
+
+          # 1) 尝试按 tag 获取 release
+          set +e
+          RESP=$(curl -s -w "\n%{http_code}" \
+            "$GITEE_API/repos/$GITEE_OWNER/$GITEE_REPO/releases/tags/$TAG?access_token=$GITEE_TOKEN")
+          BODY=$(sed '$d' <<< "$RESP")
+          CODE=$(tail -n1 <<< "$RESP")
+          set -e
+
+          if [ "$CODE" = "200" ]; then
+            RID=$(jq -r '.id' <<< "$BODY")
+            echo "Found existing release id: $RID"
+          else
+            echo "Release not found on Gitee, creating..."
+            # 2) 创建 release
+            CREATE=$(curl -sS -X POST "$GITEE_API/repos/$GITEE_OWNER/$GITEE_REPO/releases" \
+              -H "Content-Type: application/json" \
+              -d "{
+                    \"access_token\": \"${GITEE_TOKEN}\",
+                    \"tag_name\": \"${TAG}\",
+                    \"name\": ${NAME:+\"$NAME\"},
+                    \"body\": ${BODY_JSON:-\"\"},
+                    \"prerelease\": false,
+                    \"draft\": false
+                  }")
+            RID=$(jq -r '.id' <<< "$CREATE")
+            if [ "$RID" = "null" ] || [ -z "$RID" ]; then
+              echo "Failed to create release on Gitee:"
+              echo "$CREATE"
+              exit 1
+            fi
+            echo "Created Gitee release id: $RID"
+          fi
+
+          echo "rid=$RID" >> $GITHUB_OUTPUT
+
+      - name: Upload ALL assets to Gitee Release (keep names)
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+        run: |
+          set -euo pipefail
+          RID='${{ steps.gitee_release.outputs.rid }}'
+
+          shopt -s nullglob
+          FILES=(assets/*)
+          if [ ${#FILES[@]} -eq 0 ]; then
+            echo "No local assets to upload."
+            exit 0
+          fi
+
+          for f in "${FILES[@]}"; do
+            NAME=$(basename "$f")
+            echo "Uploading $NAME to Gitee release $RID ..."
+            # Gitea/Gitee 接口使用 multipart/form-data 的 attachment 字段
+            # POST /repos/{owner}/{repo}/releases/{id}/assets?name=FILENAME
+            RESP=$(curl -sS -X POST \
+              "$GITEE_API/repos/$GITEE_OWNER/$GITEE_REPO/releases/$RID/assets?access_token=$GITEE_TOKEN&name=$(printf %s "$NAME" | jq -sRr @uri)" \
+              -F "attachment=@$f")
+            URL=$(jq -r '.browser_download_url // .download_url // empty' <<< "$RESP")
+            if [ -z "$URL" ]; then
+              echo "Upload failed for $NAME:"
+              echo "$RESP"
+              exit 1
+            else
+              echo "Uploaded: $URL"
+            fi
+          done
