@@ -34,7 +34,7 @@ jobs:
             desc: windows-x86_64
 
           # ===== macOS =====
-          # macOS-13 为 Intel x86_64，macOS-14 为 Apple Silicon arm64
+          # macOS-13 为 Intel x86_64, macOS-14 为 Apple Silicon arm64
           - os: macos
             arch: x86_64
             runs_on: macos-13
@@ -108,7 +108,7 @@ jobs:
       - name: Build with PyInstaller (Emulated)
         if: "matrix.image"
         run: |
-          # 根据 matrix.arch 的值，决定 PIP_FLAG 的内容
+          # 根据 matrix.arch 的值, 决定 PIP_FLAG 的内容
           PIP_FLAG_VALUE=""
           if [ "${{ matrix.arch }}" = "x86" ]; then
             PIP_FLAG_VALUE="--break-system-packages"
@@ -160,7 +160,7 @@ jobs:
           # Change ownership to the current runner user to avoid permission errors.
           sudo chown -R "$(id -u):$(id -g)" .
         shell: bash
-      # ============ 从这里开始，所有分支的步骤合并 ============
+      # ============ 从这里开始, 所有分支的步骤合并 ============
 
       # ===== 验证架构 =====
       - name: Check binary arch (Linux)
@@ -208,27 +208,7 @@ jobs:
           Get-ChildItem "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.zip" | Format-List
         shell: pwsh
 
-      # ===== 生成 SHA256 校验和 =====
-      - name: SHA256 (Linux/macOS)
-        if: runner.os != 'Windows'
-        run: |
-          cd dist
-          shasum -a 256 "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.tar.gz" > "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.tar.gz.sha256"
-          cat "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.tar.gz.sha256"
-        shell: bash
-
-      - name: SHA256 (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          Set-Location dist
-          certutil -hashfile "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.zip" SHA256 | `
-            Select-String -NotMatch "hash of file|CertUtil|^$" | `
-            ForEach-Object { $_.Line } | `
-            Out-File -Encoding ascii "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.zip.sha256"
-          Get-Content "TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.zip.sha256"
-        shell: pwsh
-
-      # ===== 自定义 Release Body：Version与Released on紧邻，Released on与Commits之间空一行 =====
+      # ===== 自定义 Release Body: Version 与 Released on 紧邻, Released on 与 Commits 之间空一行 =====
       - name: Build custom release body
         if: startsWith(github.ref, 'refs/tags/')
         id: notes
@@ -239,7 +219,7 @@ jobs:
             const tag = context.ref.replace('refs/tags/', ''); // e.g. v0.1.1
             const displayTag = tag.replace(/^v/, '');          // e.g. 0.1.1
 
-            // 简易 semver 解析/比较（仅 x.y.z）
+            // 简易 semver 解析 / 比较 (仅 x.y.z)
             function parseSemver(name) {
               const m = name.match(/^v?(\d+)\.(\d+)\.(\d+)$/);
               if (!m) return null;
@@ -256,7 +236,7 @@ jobs:
               core.warning(`Current tag ${tag} is not plain semver, fallback to release page link.`);
             }
 
-            // 找出上一版 tag（小于当前且最大的）
+            // 找出上一版 tag (小于当前且最大的) 
             let previous = null;
             if (cur) {
               try {
@@ -280,12 +260,12 @@ jobs:
               }
             }
 
-            // 比较链接（无上一版则退回到当前 release 页）
+            // 比较链接 (无上一版则退回到当前 release 页) 
             const compareUrl = previous
               ? `https://github.com/${owner}/${repo}/compare/${previous}...${tag}`
               : `https://github.com/${owner}/${repo}/releases/tag/${tag}`;
             
-            #            // 提交列表（过滤 merge 提交）
+            #            // 提交列表 (过滤 merge 提交) 
             #            let lines = [];
             #            if (previous) {
             #              try {
@@ -308,11 +288,11 @@ jobs:
             #              }
             #            }
 
-            // 日期（YYYY-MM-DD），加粗，使用小号字体；与标题紧邻一行
+            // 日期 (YYYY-MM-DD) , 加粗, 使用小号字体；与标题紧邻一行
             const dateStr = new Date().toISOString().slice(0, 10);
             const dateLine = `<sub>Released on <strong>${dateStr}</strong></sub>`;
 
-            // 标题为加粗可点击链接；与日期紧邻（无空行）；日期与 Commits 之间空一行
+            // 标题为加粗可点击链接；与日期紧邻 (无空行) ；日期与 Commits 之间空一行
                     let body = `[**Version ${displayTag} Changelog**](${compareUrl})\n${dateLine}\n\n`;
             #            body += 'Commits:\n' + (lines.length ? lines.join('\n') : '- Initial release') + '\n';
 
@@ -331,4 +311,3 @@ jobs:
           body_path: RELEASE_BODY.md
           files: |
             dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.${{ runner.os == 'Windows' && 'zip' || 'tar.gz' }}
-            dist/TJUEcard-${{ matrix.os }}-${{ matrix.arch }}-${{ github.ref_name }}.${{ runner.os == 'Windows' && 'zip.sha256' || 'tar.gz.sha256' }}
