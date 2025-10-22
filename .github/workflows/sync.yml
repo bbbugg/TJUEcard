@@ -183,38 +183,38 @@ jobs:
                   echo "Created Gitee release id: $NEW_ID"
                   echo "rid=$NEW_ID" >> "$GITHUB_OUTPUT"
 
-            - name: Upload ALL assets to Gitee Release (keep names)
-              env:
-                  GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
-              shell: bash
-              run: |
-                  set -euo pipefail
-                  RID='${{ steps.gitee_release.outputs.rid }}'
+            # - name: Upload ALL assets to Gitee Release (keep names)
+            #   env:
+            #       GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+            #   shell: bash
+            #   run: |
+            #       set -euo pipefail
+            #       RID='${{ steps.gitee_release.outputs.rid }}'
 
-                  if [ -z "$RID" ]; then
-                    echo "ERROR: No Gitee release id to upload assets."
-                    exit 1
-                  fi
+            #       if [ -z "$RID" ]; then
+            #         echo "ERROR: No Gitee release id to upload assets."
+            #         exit 1
+            #       fi
 
-                  shopt -s nullglob
-                  FILES=(assets/*)
-                  if [ ${#FILES[@]} -eq 0 ]; then
-                    echo "No local assets to upload."
-                    exit 0
-                  fi
+            #       shopt -s nullglob
+            #       FILES=(assets/*)
+            #       if [ ${#FILES[@]} -eq 0 ]; then
+            #         echo "No local assets to upload."
+            #         exit 0
+            #       fi
 
-                  for f in "${FILES[@]}"; do
-                    NAME=$(basename "$f")
-                    echo "Uploading $NAME to Gitee release $RID ..."
-                    RESP=$(curl -sS -X POST \
-                      "$GITEE_API/repos/$GITEE_OWNER/$GITEE_REPO/releases/$RID/assets?access_token=$GITEE_TOKEN&name=$(printf %s "$NAME" | jq -sRr @uri)" \
-                      -F "attachment=@$f")
-                    URL=$(jq -r '.browser_download_url // .download_url // empty' <<< "$RESP")
-                    if [ -z "$URL" ]; then
-                      echo "Upload failed for $NAME:"
-                      echo "$RESP"
-                      exit 1
-                    else
-                      echo "Uploaded: $URL"
-                    fi
-                  done
+            #       for f in "${FILES[@]}"; do
+            #         NAME=$(basename "$f")
+            #         echo "Uploading $NAME to Gitee release $RID ..."
+            #         RESP=$(curl -sS -X POST \
+            #           "$GITEE_API/repos/$GITEE_OWNER/$GITEE_REPO/releases/$RID/assets?access_token=$GITEE_TOKEN&name=$(printf %s "$NAME" | jq -sRr @uri)" \
+            #           -F "attachment=@$f")
+            #         URL=$(jq -r '.browser_download_url // .download_url // empty' <<< "$RESP")
+            #         if [ -z "$URL" ]; then
+            #           echo "Upload failed for $NAME:"
+            #           echo "$RESP"
+            #           exit 1
+            #         else
+            #           echo "Uploaded: $URL"
+            #         fi
+            #       done
