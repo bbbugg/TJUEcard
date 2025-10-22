@@ -1,0 +1,38 @@
+name: Sync GitHub Releases to Gitee
+on:
+  release:
+    types: [published]
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install SSH Client
+        run: sudo apt-get install -y openssh-client
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GITEE_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan gitee.com >> ~/.ssh/known_hosts
+        env:
+          GITEE_SSH_PRIVATE_KEY: ${{ secrets.GITEE_SSH_PRIVATE_KEY }}
+
+      - name: Clone Gitee Repository
+        run: git clone git@gitee.com:ibenzene/TJUEcard.git
+
+      - name: Sync Release Assets
+        run: |
+          cd TJUEcard
+          # 下载 GitHub Release 文件
+          wget -O asset.zip "${{ github.event.release.assets[0].browser_download_url }}"
+
+          # 提交到 Gitee
+          git config --global user.email "i@ibenzene.cn"
+          git config --global user.name "iBenzene"
+          git add .
+          git commit -m "Sync Release: ${{ github.event.release.tag_name }}"
+          git push origin main
