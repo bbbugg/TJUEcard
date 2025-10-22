@@ -82,24 +82,17 @@
 
 ## 🚀 快速开始
 
+### Windows
+
 1. **下载**
 
-   请选择适用您操作系统的下载版本。
     - Windows: [Windows x86_64](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-windows-x86_64-v0.1.5.zip)
-    - Linux: [Linux x86_64](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-linux-x86_64-v0.1.5.tar.gz)
-      或 [Linux arm64](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-linux-arm64-v0.1.5.tar.gz)
-      或 [Linux x86](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-linux-x86-v0.1.5.tar.gz)
-      或 [Linux arm32v7](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-linux-arm32-v0.1.5.tar.gz)
-    - macOS: [macOS x86_64](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-macos-x86_64-v0.1.5.tar.gz)
-      或 [macOS arm64](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-macos-arm64-v0.1.5.tar.gz)
 
-   解压后，Windows系统包含 `TJUEcard.exe` 和 `TJUEcardSetup.exe` 两个文件，Linux和macOS系统则包含 `TJUEcard` 和
-   `TJUEcardSetup`。**请确保这两个文件在同一目录下。并且移动到一个相对固定的位置，以后不再移动。**
+   解压后，Windows系统包含 `TJUEcard.exe` 和 `TJUEcardSetup.exe` 两个文件。**请确保这两个文件在同一目录下。并且移动到一个相对固定的位置，以后不再移动。**
 
 2. **配置**
 
     - **Windows**: **管理员权限**运行 `TJUEcardSetup.exe`。
-    - **Linux/macOS**: 在终端中运行 `sudo ./TJUEcardSetup`。
 
    运行 TJUEcardSetup 时，程序会引导您进行配置，包括**一卡通用户名**、**一卡通密码**、用于接收邮件的邮箱和授权码等信息。配置成功后，会在程序同目录下生成
    `TJUEcard_user_config.json` 配置文件。
@@ -112,7 +105,15 @@
    程序来查询并发送邮件。每天固定时间是您最后一次运行 `TJUEcardSetup` 程序完成配置的时间。
 
    > **注意**: 为了让定时任务在用户未登录时也能正常运行，在所有系统上设置时都要使用 **管理员权限** 。请确保您以管理员身份运行
-   `TJUEcardSetup` 程序（在Windows上右键点击“以管理员身份运行”，在Linux和macOS上使用 `sudo` 命令）。
+   `TJUEcardSetup` 程序（在Windows上右键点击“以管理员身份运行”）。
+
+### Linux / macOS
+
+打开命令行（终端），输入一下命令一键安装即可：
+
+``` bash
+curl -fsSL https://raw.githubusercontent.com/bbbugg/TJUEcard/master/install.sh | sudo bash
+```
 
 ## 🔧 高级
 
