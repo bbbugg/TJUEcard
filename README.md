@@ -96,7 +96,7 @@
 
 **1️⃣ 下载程序**
 
-- Windows 用户：点击『[此处](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-windows-x86_64-v0.1.5.zip) 』下载压缩包，解压后，包含 `TJUEcard.exe` 和 `TJUEcardSetup.exe` 两个文件。**请将这两个可执行文件放在你想安装的文件夹下，日后不再移动。**
+- Windows 用户：点击『[此处](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-windows-x86_64-v0.1.5.zip)』下载压缩包，解压后，包含 `TJUEcard.exe` 和 `TJUEcardSetup.exe` 两个文件。**请将这两个可执行文件放在你想安装的文件夹下，日后不再移动。**
 
 - Linux 或 macOS 用户打开命令行（终端），输入以下命令一键安装即可：
 
