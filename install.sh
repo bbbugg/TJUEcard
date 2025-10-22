@@ -18,24 +18,24 @@ Darwin) OS="macos" ;;
 esac
 
 case "$(uname -m)" in
-    # 64位支持
-    x86_64 | amd64) ARCH="x86_64" ;;
-    arm64 | aarch64) ARCH="arm64" ;;
-    # 32位x86支持（i386/i686常见于老Linux）
-    i386 | i686 | x86) ARCH="x86" ;;
-    # 32位ARM支持（armv7l等常见于Raspberry Pi等设备）
-    armv7l | armhf | armel) ARCH="arm32" ;;
-    # macOS 32位不支持（Apple已弃用）
-    i386 | i686)  # 只在Darwin时检查
-        if [[ "$OS" == "macos" ]]; then
-            echo "❌ macOS不支持32位架构: $(uname -m)"
-            exit 1
-        fi
-        ;;
-    *)
-    echo "❌ 不支持的架构: $(uname -m)，请在仓库中提交 Issue。"
-    exit 1
+# 64 位支持
+x86_64 | amd64) ARCH="x86_64" ;;
+arm64 | aarch64) ARCH="arm64" ;;
+# 32 位 x86 支持（i386/i686 常见于老Linux）
+i386 | i686 | x86) ARCH="x86" ;;
+# 32 位 ARM 支持（armv7l 等常见于 Raspberry Pi等设备）
+armv7l | armhf | armel) ARCH="arm32" ;;
+# macOS 32 位不支持（Apple 已弃用）
+i386 | i686)  # 只在 Darwin 时检查
+    if [[ "$OS" == "macos" ]]; then
+        echo "❌ macOS 不支持 32 位架构: $(uname -m)"
+        exit 1
+    fi
     ;;
+*)
+echo "❌ 不支持的架构: $(uname -m)，请在仓库中提交 Issue。"
+exit 1
+;;
 esac
 
 # 询问安装目录
@@ -55,7 +55,7 @@ url=$(curl -fsSL -H "User-Agent: $UA" "$API" |
 
 if [[ -z "$url" ]]; then
     echo "❌ 未找到匹配的安装包 (TJUEcard-${OS}-${ARCH}-v*.tar.gz)"
-    echo "   提示: 请检查GitHub仓库是否提供${OS}-${ARCH}版本https://github.com/bbbugg/TJUEcard/releases"
+    echo "   提示: 请检查 GitHub 仓库是否提供 ${OS}-${ARCH} 版本 https://github.com/bbbugg/TJUEcard/releases"
     echo "        或在仓库中提交 Issue。"
     exit 1
 fi
