@@ -5,6 +5,7 @@
 警告：
 - 删除或丢失密钥文件将导致现有 JSON 中的密文无法解密，需要重新运行 setup 重新生成配置。
 """
+
 from __future__ import annotations
 
 import os
@@ -123,7 +124,11 @@ def migrate_plaintext_to_encrypted(config_path: str) -> bool:
     # 迁移登录密码
     creds = data.get("credentials") or {}
     if isinstance(creds, dict):
-        if "password_enc" not in creds and "password" in creds and creds.get("password"):
+        if (
+            "password_enc" not in creds
+            and "password" in creds
+            and creds.get("password")
+        ):
             try:
                 enc = encrypt_for_storage(str(creds["password"]))
                 creds["password_enc"] = enc
@@ -136,7 +141,11 @@ def migrate_plaintext_to_encrypted(config_path: str) -> bool:
     # 迁移邮箱授权码
     notifier = data.get("email_notifier") or {}
     if isinstance(notifier, dict):
-        if "auth_code_enc" not in notifier and "auth_code" in notifier and notifier.get("auth_code"):
+        if (
+            "auth_code_enc" not in notifier
+            and "auth_code" in notifier
+            and notifier.get("auth_code")
+        ):
             try:
                 enc = encrypt_for_storage(str(notifier["auth_code"]))
                 notifier["auth_code_enc"] = enc
