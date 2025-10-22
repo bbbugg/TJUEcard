@@ -200,9 +200,9 @@ if __name__ == "__main__":
     print("欢迎使用电费查询配置程序 (setup)。")
     print("本程序将引导您登录、选择房间并配置邮件提醒。\n")
     print("说明：您的登录密码与邮箱授权码将加密后写入 JSON 配置，")
-    print(f"用于解密的本地数据密钥保存在: {get_key_file_path()}（首次保存时自动生成）。请妥善备份该文件。")
+    print(f"用于解密本地数据的密钥保存在: {get_key_file_path()}（首次保存时自动生成）。请妥善备份该文件。")
     print("请确保您已经把 TJUEcardSetup 和 TJUEcard 程序都放在了同一个目录下，")
-    print("并且移动到一个相对固定的位置，以后不再移动。\n")
+    print("并且移动到你想安装的文件夹下，日后不再移动。\n")
 
     session = requests.Session()
     session.headers.update({
@@ -219,7 +219,7 @@ if __name__ == "__main__":
     email_configured = False
     while not email_configured:
         print("\n--- 邮件通知配置 ---")
-        print("您需要提供一个QQ邮箱或163邮箱或天大邮箱用于接收通知，以及该邮箱的SMTP授权码。")
+        print("您需要提供一个『QQ邮箱』或『163邮箱』或『天大邮箱』用于接收通知，以及该邮箱的SMTP授权码。")
         print(
             "QQ邮箱：请前往QQ邮箱 -> 设置 -> 账号与安全 -> 安全设置 -> 开启“POP3/IMAP/SMTP/Exchange/CardDAV 服务” -> 生成授权码获取。")
         print(

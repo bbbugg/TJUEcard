@@ -12,23 +12,35 @@ case "$(uname -s)" in
 Linux) OS="linux" ;;
 Darwin) OS="macos" ;;
 *)
-    echo "❌ 不支持的系统: $(uname -s)"
+    echo "❌ 不支持的系统: $(uname -s)，请在仓库中提交 Issue。"
     exit 1
     ;;
 esac
 
 case "$(uname -m)" in
-x86_64 | amd64) ARCH="x86_64" ;;
-arm64 | aarch64) ARCH="arm64" ;;
-*)
-    echo "❌ 不支持的架构: $(uname -m)"
+    # 64位支持
+    x86_64 | amd64) ARCH="x86_64" ;;
+    arm64 | aarch64) ARCH="arm64" ;;
+    # 32位x86支持（i386/i686常见于老Linux）
+    i386 | i686 | x86) ARCH="x86" ;;
+    # 32位ARM支持（armv7l等常见于Raspberry Pi等设备）
+    armv7l | armhf | armel) ARCH="arm32" ;;
+    # macOS 32位不支持（Apple已弃用）
+    i386 | i686)  # 只在Darwin时检查
+        if [[ "$OS" == "macos" ]]; then
+            echo "❌ macOS不支持32位架构: $(uname -m)"
+            exit 1
+        fi
+        ;;
+    *)
+    echo "❌ 不支持的架构: $(uname -m)，请在仓库中提交 Issue。"
     exit 1
     ;;
 esac
 
 # 询问安装目录
 default_dir="$(pwd)"
-read -r -p "安装目录 (默认: ${default_dir}): " INSTALL_DIR
+read -r -p "输入安装目录 (回车使用默认当前目录: ${default_dir}): " INSTALL_DIR
 INSTALL_DIR="${INSTALL_DIR:-$default_dir}"
 mkdir -p "$INSTALL_DIR"
 cd "$INSTALL_DIR"
@@ -43,6 +55,8 @@ url=$(curl -fsSL -H "User-Agent: $UA" "$API" |
 
 if [[ -z "$url" ]]; then
     echo "❌ 未找到匹配的安装包 (TJUEcard-${OS}-${ARCH}-v*.tar.gz)"
+    echo "   提示: 请检查GitHub仓库是否提供${OS}-${ARCH}版本https://github.com/bbbugg/TJUEcard/releases"
+    echo "        或在仓库中提交 Issue。"
     exit 1
 fi
 
