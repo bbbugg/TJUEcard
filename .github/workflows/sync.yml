@@ -19,36 +19,47 @@ jobs:
                   sudo apt-get update
                   sudo apt-get install -y jq curl
 
-            - name: Capture release context
+            - name: Capture context & download assets (latest release)
               id: ctx
               env:
                   GITHUB_REPOSITORY: ${{ github.repository }}
+              shell: bash
               run: |
-                  echo "Manually triggered, fetching latest release via GitHub API..."
-                  read -r TAG NAME BODY < <(
-                  curl -fsSL "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest" \
-                  | jq -r '[.tag_name, (.name // ""), (.body // "")] | @tsv'
+                  set -Eeuo pipefail
+
+                  # 1) 拉取最新 release (含 assets)
+                  RESP=$(
+                    curl -fsSL \
+                      -H 'Accept: application/vnd.github+json' \
+                      -H 'User-Agent: release-sync-action' \
+                      "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest"
                   )
 
-                  echo "tag=$TAG"   >> $GITHUB_OUTPUT
-                  echo "name=$NAME" >> $GITHUB_OUTPUT
-                  BODY_ESCAPED=$(jq -Rn --arg s "$BODY" '$s')
-                  echo "body=$BODY_ESCAPED" >> $GITHUB_OUTPUT
+                  # 2) 输出 JSON 给后续步骤使用
+                  TAG=$(jq -r '.tag_name' <<<"$RESP")
+                  NAME=$(jq -r '.name // empty' <<<"$RESP")
+                  BODY=$(jq -r '.body // empty' <<<"$RESP")
+                  echo "tag=$TAG"   >> "$GITHUB_OUTPUT"
+                  echo "name=$NAME" >> "$GITHUB_OUTPUT"
+                  echo "body=$(jq -Rn --arg s "$BODY" '$s')" >> "$GITHUB_OUTPUT"  # 已是合法 JSON 字符串
 
-            - name: Download ALL assets from this GitHub Release
-              run: |
+                  # 3) 下载所有资产 (保留原名)
                   mkdir -p assets
-                  ASSETS=$(jq -c '.assets[] | {name: .name, url: .browser_download_url}' release.json)
-                  if [ -z "$ASSETS" ]; then
-                    echo "No assets found on this release."
-                  else
-                    echo "$ASSETS" | while read -r item; do
-                      NAME=$(jq -r '.name' <<<"$item")
-                      URL=$(jq -r '.url'  <<<"$item")
-                      echo "Downloading $NAME ..."
-                      curl -fL --retry 3 -o "assets/$NAME" "$URL"
-                    done
+                  COUNT=$(jq -r '.assets|length' <<<"$RESP")
+                  if [ "$COUNT" = "0" ] || [ -z "$COUNT" ]; then
+                    echo "No assets found on release ${TAG}."
+                    exit 0
                   fi
+
+                  jq -r '.assets[] | [.name, .browser_download_url] | @tsv' <<<"$RESP" \
+                  | while IFS=$'\t' read -r NAME URL; do
+                      echo "Downloading ${NAME} ..."
+                      curl -fL --retry 3 --retry-delay 2 -o "assets/${NAME}" "$URL"
+                    done
+
+                  # 如需额外同步源码包, 取消下面两行注释即可
+                  # ZIPURL=$(jq -r '.zipball_url' <<<"$RESP"); [ -n "$ZIPURL" ] && curl -fL -o "assets/source-${TAG}.zip" "$ZIPURL"
+                  # TARURL=$(jq -r '.tarball_url' <<<"$RESP"); [ -n "$TARURL" ] && curl -fL -o "assets/source-${TAG}.tar.gz" "$TARURL"
 
             - name: Ensure Release exists on Gitee (create if missing)
               id: gitee_release
@@ -58,7 +69,7 @@ jobs:
                   set -euo pipefail
                   TAG='${{ steps.ctx.outputs.tag }}'
                   NAME='${{ steps.ctx.outputs.name }}'
-                  BODY_JSON='${{ steps.ctx.outputs.body }}'   # 已是 JSON 字符串
+                  BODY_JSON='${{ steps.ctx.outputs.body }}' # 已是 JSON 字符串
 
                   echo "Ensuring release for tag $TAG on Gitee ..."
 
