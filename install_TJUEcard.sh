@@ -2,9 +2,9 @@
 
 set -euo pipefail
 
-OWNER="bbbugg"
+OWNER="iBenzene"
 REPO="TJUEcard"
-API="https://api.github.com/repos/${OWNER}/${REPO}/releases/latest"
+API="https://gitee.com/api/v5/repos/${OWNER}/${REPO}/releases/latest"
 UA="TJUEcard-Installer"
 
 # 检测系统与架构
@@ -55,8 +55,8 @@ url=$(curl -fsSL -H "User-Agent: $UA" "$API" |
 
 if [[ -z "$url" ]]; then
     echo "❌ 未找到匹配的安装包 (TJUEcard-${OS}-${ARCH}-v*.tar.gz)"
-    echo "   提示: 请检查 GitHub 仓库是否提供 ${OS}-${ARCH} 版本 https://github.com/bbbugg/TJUEcard/releases"
-    echo "        或在仓库中提交 Issue。"
+    echo "   提示: 请检查 Gitee 仓库是否提供 ${OS}-${ARCH} 版本 https://gitee.com/iBenzene/TJUEcard/releases"
+    echo "        或在 GitHub 原始仓库 https://github.com/bbbugg/TJUEcard/issues 中提交 Issue。"
     exit 1
 fi
 
