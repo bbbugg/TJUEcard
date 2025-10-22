@@ -23,9 +23,15 @@ jobs:
 
       - name: Capture release context
         id: ctx
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
-          # 事件 JSON 保存下来, 后续用 jq 统一解析
-          echo '${{ toJson(github.event.release) }}' > release.json
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo '${{ toJson(github.event.release) }}' > release.json
+          else
+            echo "Manually triggered, fetching latest release via GitHub API..."
+            curl -s "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest" > release.json
+          fi
 
           TAG=$(jq -r '.tag_name' release.json)
           NAME=$(jq -r '.name // empty' release.json)
@@ -33,13 +39,10 @@ jobs:
 
           echo "tag=$TAG"   >> $GITHUB_OUTPUT
           echo "name=$NAME" >> $GITHUB_OUTPUT
-          # 将换行安全地转为 \n, 便于传给 curl
           BODY_ESCAPED=$(jq -r @json <<<"$BODY")
           echo "body=$BODY_ESCAPED" >> $GITHUB_OUTPUT
 
       - name: Download ALL assets from this GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p assets
           ASSETS=$(jq -c '.assets[] | {name: .name, url: .browser_download_url}' release.json)
