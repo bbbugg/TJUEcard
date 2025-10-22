@@ -49,77 +49,65 @@
 
 ## ⭐ 主要功能
 
-🔍 自动化电费查询。
+🔍 自动化查询电费。
 
-📮 电费低于一定余额时发送邮件提醒。
+📮 当电费低于一定额度时发送邮件来提醒您该充值电费了。
 
-👍 跨平台支持（Windows、Linux、~~macOS~~）。
+👍 跨平台支持（Windows、Linux、macOS）。
 
 ⏰ 自动设置定时任务，每天检查一次电费余额。
 
-🔑 密码和邮箱授权码加密保存在本地。
+🔑 密码和邮箱授权码加密保存在本地，无需担心安全问题。
 
 ## 💻 运行要求
 
-### 系统
+### ⚙ 系统
 
-| 操作系统          | 支持架构                                      |
-|---------------|-------------------------------------------|
-| Windows 10+   | x86_64                                    |
-| Ubuntu 22.04+ | x86_64, arm64, x86, arm32v7               |
-| ~~macOS 13+~~ | ~~x86_64 (Intel), arm64 (Apple Silicon)~~ |
+| 操作系统            | 支持架构                                |
+| ------------------- | --------------------------------------- |
+| Windows 10 及以上   | x86_64                                  |
+| Ubuntu 22.04 及以上 | x86_64 / x86、arm64、arm32v7            |
+| macOS 12 及以上     | x86_64（Intel）、arm64（Apple Silicon） |
 
-> ⚠ 其他 Linux 发行版未经验证，不保证能正常使用。
+> ⚠ 其他 Linux 发行版未经验证，不保证能正常使用，计划未来支持非 Debian 系的发行版。
 
-### 邮箱
+### 📫 邮箱
 
 目前支持 QQ邮箱、 163邮箱 和 天大邮箱（SMTP）。
 
-### 网络
+### 🛜 网络
 
 - 网络连接到天津大学的校园网。
 - 能够发送邮件。
 
 ## 🚀 快速开始
 
-### Windows
+**1️⃣ 下载程序**
 
-1. **下载**
+- Windows 用户：点击『[此处](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-windows-x86_64-v0.1.5.zip) 』下载压缩包，解压后，包含 `TJUEcard.exe` 和 `TJUEcardSetup.exe` 两个文件。**请将这两个可执行文件放在你想安装的文件夹下，日后不再移动。**
 
-    - Windows: [Windows x86_64](https://github.com/bbbugg/TJUEcard/releases/latest/download/TJUEcard-windows-x86_64-v0.1.5.zip)
-
-   解压后，Windows系统包含 `TJUEcard.exe` 和 `TJUEcardSetup.exe` 两个文件。**请确保这两个文件在同一目录下。并且移动到一个相对固定的位置，以后不再移动。**
-
-2. **配置**
-
-    - **Windows**: **管理员权限**运行 `TJUEcardSetup.exe`。
-
-   运行 TJUEcardSetup 时，程序会引导您进行配置，包括**一卡通用户名**、**一卡通密码**、用于接收邮件的邮箱和授权码等信息。配置成功后，会在程序同目录下生成
-   `TJUEcard_user_config.json` 配置文件。
-
-   > 若不确定一卡通的账号密码，请[验证或找回](https://github.com/bbbugg/TJUEcard/issues/3)
-
-3. **定时任务**
-
-   配置成功后，程序会询问您是否自动设置系统定时任务。任务将被设置为在每天的固定时间运行 `TJUEcard`
-   程序来查询并发送邮件。每天固定时间是您最后一次运行 `TJUEcardSetup` 程序完成配置的时间。
-
-   > **注意**: 为了让定时任务在用户未登录时也能正常运行，在所有系统上设置时都要使用 **管理员权限** 。请确保您以管理员身份运行
-   `TJUEcardSetup` 程序（在Windows上右键点击“以管理员身份运行”）。
-
-### Linux / macOS
-
-打开命令行（终端），输入一下命令一键安装即可：
+- Linux 或 macOS 用户打开命令行（终端），输入以下命令一键安装即可：
 
 ``` bash
 curl -fsSL https://raw.githubusercontent.com/bbbugg/TJUEcard/master/install.sh | sudo bash
 ```
 
+**2️⃣ 配置程序**
+
+> 💡 提醒 **Windows 用户** 如需配置定时任务，请右键点击以 **管理员身份** 运行 `TJUEcardSetup.exe`，请放心，这并不会带来安全问题，使用管理员权限的唯一目的在于让定时任务在锁屏时也能正常运行。
+>
+> ❓ 如果你不确定一卡通的账号密码，请『[验证或找回](https://github.com/bbbugg/TJUEcard/issues/3)』。
+
+运行 TJUEcardSetup 时，程序会引导您进行配置，包括设置 **一卡通用户名**、**一卡通密码**，以及用于接收邮件的邮箱和授权码（可选）。
+
+在配置成功后，会在程序同目录下生成 `TJUEcard_user_config.json` 配置文件。配置成功后，程序会询问您是否自动设置系统定时任务。即在每天的固定时间运行 `TJUEcard`
+程序来查询电费余额，并发送邮件。设置的固定时间将是您最后一次运行 `TJUEcardSetup` 程序完成配置的时间。
+
 ## 🔧 高级
 
-### 定时任务管理
+### ⏰ 定时任务管理
 
-查看文档：[定时任务管理](https://github.com/bbbugg/TJUEcard/issues/4)
+请您查看文档『[定时任务管理](https://github.com/bbbugg/TJUEcard/issues/4)』，按照相关说明来进行高级操作。
 
 ## ❗注意事项
 
@@ -155,5 +143,5 @@ curl -fsSL https://raw.githubusercontent.com/bbbugg/TJUEcard/master/install.sh |
 - [ ] 考虑支持多房间的查询。
 - [ ] 为方便用户，下个大版本上线中心化查询服务，**用户只需提供查询房间和邮箱即可实现每天查询**。
 - [x] 敏感信息目前还是明文存储，预计在下个版本改成加密存储。
-- [x] Linux重复运行Setup程序不会覆盖之前的定时任务。
-- [x] 考虑支持更多Linux版本的定时任务配置。
+- [x] Linux重复运行 Setup 程序不会覆盖之前的定时任务。
+- [x] 考虑支持更多 Linux 版本的定时任务配置。
