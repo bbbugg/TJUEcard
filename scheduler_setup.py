@@ -40,7 +40,7 @@ def setup_windows_scheduler(config_path, python_executable):
         else:
             # 作为脚本运行
             task_command = (
-                f'"{python_executable}" "{config_path}"'  # 注意这里需要转义引号
+                f'\"{python_executable}" \"{config_path}"'  # 注意这里需要转义引号
             )
 
         # 构建schtasks命令
