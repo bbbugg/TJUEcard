@@ -30,10 +30,6 @@ jobs:
                   | jq -r '[.tag_name, (.name // ""), (.body // "")] | @tsv'
                   )
 
-                  TAG=$(jq -r '.tag_name' release.json)
-                  NAME=$(jq -r '.name // empty' release.json)
-                  BODY=$(jq -r '.body // empty' release.json)
-
                   echo "tag=$TAG"   >> $GITHUB_OUTPUT
                   echo "name=$NAME" >> $GITHUB_OUTPUT
                   BODY_ESCAPED=$(jq -Rn --arg s "$BODY" '$s')
