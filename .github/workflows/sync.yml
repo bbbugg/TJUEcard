@@ -1,8 +1,6 @@
 name: Sync GitHub Release to Gitee
 
 on:
-    release:
-        types: [published]
     workflow_dispatch:
 
 jobs:
@@ -26,33 +24,11 @@ jobs:
               env:
                   GITHUB_REPOSITORY: ${{ github.repository }}
               run: |
-                  if [ "${{ github.event_name }}" = "release" ]; then
-                    echo '${{ toJson(github.event.release) }}' > release.json
-                  else
-                    echo "Manually triggered, fetching latest release via GitHub API..."
-                    curl -s "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest" > release.json
-                  fi
-
-                  # Debug: print release.json
-                  echo "Release JSON:"
-                  cat release.json
-
-                    echo "== file/encoding =="
-                    file -b --mime-encoding release.json || true
-                    echo "== head hex =="
-                    head -c 64 release.json | xxd
-                    echo "== raw head =="
-                    head -n 3 release.json
-                    tr -d '\r' < release.json > release.clean.json
-                    mv release.clean.json release.json
-
-                    if ! jq -e . release.json >/dev/null 2>&1; then
-                        echo "!! JSON invalid; dumping context around head & tail"
-                        head -c 200 release.json | xxd
-                        echo "---"
-                        tail -c 200 release.json | xxd
-                        exit 1
-                    fi
+                  echo "Manually triggered, fetching latest release via GitHub API..."
+                  read -r TAG NAME BODY < <(
+                  curl -fsSL "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest" \
+                  | jq -r '[.tag_name, (.name // ""), (.body // "")] | @tsv'
+                  )
 
                   TAG=$(jq -r '.tag_name' release.json)
                   NAME=$(jq -r '.name // empty' release.json)
@@ -60,7 +36,7 @@ jobs:
 
                   echo "tag=$TAG"   >> $GITHUB_OUTPUT
                   echo "name=$NAME" >> $GITHUB_OUTPUT
-                  BODY_ESCAPED=$(jq -r @json <<<"$BODY")
+                  BODY_ESCAPED=$(jq -Rn --arg s "$BODY" '$s')
                   echo "body=$BODY_ESCAPED" >> $GITHUB_OUTPUT
 
             - name: Download ALL assets from this GitHub Release
