@@ -13,6 +13,9 @@ jobs:
         steps:
             - name: Checkout (not strictly needed)
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+                  fetch-tags: true
 
             - name: Prepare tools
               run: |
@@ -61,22 +64,56 @@ jobs:
                   # ZIPURL=$(jq -r '.zipball_url' <<<"$RESP"); [ -n "$ZIPURL" ] && curl -fL -o "assets/source-${TAG}.zip" "$ZIPURL"
                   # TARURL=$(jq -r '.tarball_url' <<<"$RESP"); [ -n "$TARURL" ] && curl -fL -o "assets/source-${TAG}.tar.gz" "$TARURL"
 
-            - name: Ensure Release exists on Gitee (create if missing)
+            - name: Ensure Tag & Release on Gitee (create if missing)
               id: gitee_release
               env:
                   GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+                  GITHUB_REPOSITORY: ${{ github.repository }}
               shell: bash
               run: |
                   set -euo pipefail
 
                   TAG='${{ steps.ctx.outputs.tag }}'
                   NAME='${{ steps.ctx.outputs.name }}'
-                  # BODY_JSON 为 JSON 字符串 (已转义好的文本, 例如 "line1\nline2")
-                  BODY_JSON='${{ steps.ctx.outputs.body }}'
+                  BODY_JSON='${{ steps.ctx.outputs.body }}'   # 已是 JSON 字符串
 
-                  echo "Ensuring release for tag '$TAG' on Gitee ($GITEE_OWNER/$GITEE_REPO) ..."
+                  if [ -z "$TAG" ] || [ "$TAG" = "null" ]; then
+                    echo "ERROR: No tag found from GitHub latest release."
+                    exit 1
+                  fi
 
-                  # ---------- 尝试获取已存在的 release (按 tag) ----------
+                  echo "Ensuring tag & release for '$TAG' on Gitee ($GITEE_OWNER/$GITEE_REPO) ..."
+
+                  # 0) 解析 GitHub 上该 tag 的真实提交 SHA (优先使用本地 git, 失败则用 API 兜底)
+                  set +e
+                  SHA=$(git rev-list -n 1 "$TAG" 2>/dev/null)
+                  set -e
+                  if [ -z "${SHA:-}" ]; then
+                      echo "Local git resolve failed for tag $TAG, fallback to GitHub API..."
+                      REF_JSON=$(curl -fsSL \
+                        -H 'Accept: application/vnd.github+json' \
+                        -H 'User-Agent: release-sync-action' \
+                        "https://api.github.com/repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}")
+                      TYPE=$(jq -r '.object.type // empty' <<<"$REF_JSON")
+                      OBJ_SHA=$(jq -r '.object.sha // empty' <<<"$REF_JSON")
+                      if [ "$TYPE" = "tag" ]; then
+                          TAGOBJ=$(curl -fsSL \
+                            -H 'Accept: application/vnd.github+json' \
+                            -H 'User-Agent: release-sync-action' \
+                            "https://api.github.com/repos/${GITHUB_REPOSITORY}/git/tags/${OBJ_SHA}")
+                          SHA=$(jq -r '.object.sha // empty' <<<"$TAGOBJ")
+                      else
+                          SHA="$OBJ_SHA"
+                      fi
+                  fi
+
+                  if [ -z "${SHA:-}" ] || [ "${SHA:-}" = "null" ]; then
+                      echo "ERROR: cannot resolve commit SHA for tag $TAG from GitHub."
+                      exit 1
+                  fi
+                  echo "Resolved GitHub tag $TAG -> commit $SHA"
+
+                  # ---------- 若 release 已存在 (且 id 有效), 直接复用 ----------
                   set +e
                   RESP="$(curl -s -w '\n%{http_code}' \
                     "$GITEE_API/repos/$GITEE_OWNER/$GITEE_REPO/releases/tags/$TAG?access_token=$GITEE_TOKEN")"
@@ -84,10 +121,8 @@ jobs:
                   BODY="$(sed '$d' <<<"$RESP")"
                   CODE="$(tail -n1 <<<"$RESP" | tr -d '\r')"
 
-                  # 有些情况下 Gitee 可能返回 200 但 id 为 null, 这里要同时校验 HTTP 码与 id 字段有效性
                   RID=""
                   if [ "$CODE" = "200" ]; then
-                      # 提取 id, 若为 null/缺失, 则视为未找到
                       if jq -e '.id != null' >/dev/null 2>&1 <<<"$BODY"; then
                           RID="$(jq -r '.id' <<<"$BODY")"
                           if [ "$RID" = "null" ] || [ -z "$RID" ]; then
@@ -102,38 +137,23 @@ jobs:
                       exit 0
                   fi
 
-                  echo "Release not found (or invalid) on Gitee, creating..."
-
-                  # ---------- 获取 Gitee 仓库默认分支, 作为 target_commitish ----------
-                  set +e
-                  REPO_INFO="$(curl -s "$GITEE_API/repos/$GITEE_OWNER/$GITEE_REPO?access_token=$GITEE_TOKEN")"
-                  set -e
-                  TARGET_BRANCH="$(jq -r '.default_branch // empty' <<<"$REPO_INFO" || true)"
-                  if [ -z "${TARGET_BRANCH:-}" ] || [ "${TARGET_BRANCH:-}" = "null" ]; then
-                      # 尝试回退到 main, 再回退到 master
-                      TARGET_BRANCH="main"
-                      # 若需要, 你也可以在此处探测分支是否存在并回退为 master, 这里简单回退两级
-                      #  (创建 release 时若 tag 不存在, Gitee 会基于该分支创建 tag)
-                  fi
+                  echo "Release not found (or invalid). Will create release and tag (if missing) on Gitee."
 
                   # ---------- 规范化 NAME 与 BODY ----------
-                  # 若 name 为空, 则使用 tag 作为展示名, 避免 JSON 构造时出现空字段导致无效 JSON
                   SAFE_NAME="$NAME"
                   if [ -z "$SAFE_NAME" ] || [ "$SAFE_NAME" = "null" ]; then
                       SAFE_NAME="$TAG"
                   fi
-
-                  # BODY_JSON 已是 JSON 字符串；若为空, 则置为 "" 的 JSON
                   if [ -z "$BODY_JSON" ] || [ "$BODY_JSON" = "null" ]; then
                       BODY_JSON='""'
                   fi
 
-                  # ---------- 使用 jq 构造创建 release 的 JSON, 有效避免转义问题 ----------
+                  # 关键：将 target_commitish 设为 GitHub 上该 tag 的提交 SHA
                   CREATE_PAYLOAD="$(jq -n \
                       --arg at   "$GITEE_TOKEN" \
                       --arg tag  "$TAG" \
                       --arg name "$SAFE_NAME" \
-                      --arg tgt  "$TARGET_BRANCH" \
+                      --arg tgt  "$SHA" \
                       --argjson body "$BODY_JSON" \
                       '{
                           access_token: $at,
@@ -144,7 +164,7 @@ jobs:
                       }'
                   )"
 
-                  # ---------- 创建 release ----------
+                  # ---------- 创建 release (若 tag 不存在, Gitee 将以 target_commitish=$SHA 创建同名 tag) ----------
                   CREATE_RESP="$(curl -sS -X POST \
                     -H 'Content-Type: application/json' \
                     -d "$CREATE_PAYLOAD" \
@@ -166,9 +186,15 @@ jobs:
             - name: Upload ALL assets to Gitee Release (keep names)
               env:
                   GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+              shell: bash
               run: |
                   set -euo pipefail
                   RID='${{ steps.gitee_release.outputs.rid }}'
+
+                  if [ -z "$RID" ]; then
+                    echo "ERROR: No Gitee release id to upload assets."
+                    exit 1
+                  fi
 
                   shopt -s nullglob
                   FILES=(assets/*)
@@ -180,8 +206,6 @@ jobs:
                   for f in "${FILES[@]}"; do
                     NAME=$(basename "$f")
                     echo "Uploading $NAME to Gitee release $RID ..."
-                    # Gitea/Gitee 接口使用 multipart/form-data 的 attachment 字段
-                    # POST /repos/{owner}/{repo}/releases/{id}/assets?name=FILENAME
                     RESP=$(curl -sS -X POST \
                       "$GITEE_API/repos/$GITEE_OWNER/$GITEE_REPO/releases/$RID/assets?access_token=$GITEE_TOKEN&name=$(printf %s "$NAME" | jq -sRr @uri)" \
                       -F "attachment=@$f")
