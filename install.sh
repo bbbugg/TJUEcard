@@ -23,7 +23,7 @@ case "$(uname -m)" in
     arm64 | aarch64) ARCH="arm64" ;;
     # 32 位 x86 支持（i386/i686 常见于老Linux）
     i386 | i686 | x86) ARCH="x86" ;;
-    # 32 位 ARM 支持（armv7l 等常见于 Raspberry Pi等设备）
+    # 32 位 ARM 支持（armv7l 等常见于 Raspberry Pi 等设备）
     armv7l | armhf | armel) ARCH="arm32" ;;
     # macOS 32 位不支持（Apple 已弃用）
     i386 | i686) # 只在 Darwin 时检查
