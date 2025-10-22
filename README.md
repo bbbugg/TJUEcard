@@ -102,7 +102,7 @@
 - Linux 或 macOS 用户打开命令行（终端），输入以下命令一键安装即可：
 
     ``` bash
-    curl -fsSL https://raw.githubusercontent.com/bbbugg/TJUEcard/master/install.sh | sudo bash
+    curl -fsSLO https://raw.githubusercontent.com/bbbugg/TJUEcard/master/install.sh && sudo bash install.sh
     ```
 
 **2️⃣ 配置程序**
