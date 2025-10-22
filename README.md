@@ -115,7 +115,7 @@ curl -fsSL https://raw.githubusercontent.com/bbbugg/TJUEcard/master/install.sh |
 在配置成功后，会在程序同目录下生成 `TJUEcard_user_config.json` 配置文件。配置成功后，程序会询问您是否自动设置系统定时任务。即在每天的固定时间运行 `TJUEcard`
 程序来查询电费余额，并发送邮件。设置的固定时间将是您最后一次运行 `TJUEcardSetup` 程序完成配置的时间。
 
-### 说明
+### 📖 说明
 
 - 本项目需要提供您的天津大学一卡通账号密码，登录才能查询电费。这些信息保存在您的计算机上，不会上传到任何服务器，请您放心使用。
 - 如需重新配置用户密码、邮箱、查询房间号，请重新运行 `TJUEcardSetup` 进行配置。
