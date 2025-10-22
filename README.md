@@ -1,7 +1,8 @@
 <h1 align="center">天津大学电费自动化查询工具</h1>
 <p align="center">
-  <div>本工具可自动查询您宿舍的电费，并在电费低于设定值时发送邮件提醒。解决没及时充电费，导致突然停电的痛点。</div>
+  <a>本工具可自动查询您宿舍的电费，并在电费低于设定值时发送邮件提醒。解决没及时充电费，导致突然停电的痛点。</a>
 </p>
+
 <p align="center">
   <a href="https://www.tju.edu.cn">
     <img
@@ -76,10 +77,10 @@
 ### ⚙ 系统
 
 | 操作系统            | 支持架构                                |
-| ------------------- | --------------------------------------- |
-| Windows 10 及以上   | x86_64                                  |
-| Ubuntu 22.04 及以上 | x86_64 / x86、arm64、arm32v7            |
-| macOS 12 及以上     | x86_64（Intel）、arm64（Apple Silicon） |
+| ------------------- |-------------------------------------|
+| Windows 10 及以上   | x86_64                              |
+| Ubuntu 22.04 及以上 | x86_64 / x86、arm64、arm32v7          |
+| macOS 12 及以上     | x86_64(Intel)、arm64(Apple Silicon)  |
 
 > ⚠ 其他 Linux 发行版未经验证，不保证能正常使用，计划未来支持非 Debian 系的发行版。
 
@@ -100,9 +101,9 @@
 
 - Linux 或 macOS 用户打开命令行（终端），输入以下命令一键安装即可：
 
-``` bash
-curl -fsSL https://raw.githubusercontent.com/bbbugg/TJUEcard/master/install.sh | sudo bash
-```
+    ``` bash
+    curl -fsSL https://raw.githubusercontent.com/bbbugg/TJUEcard/master/install.sh | sudo bash
+    ```
 
 **2️⃣ 配置程序**
 
@@ -110,7 +111,7 @@ curl -fsSL https://raw.githubusercontent.com/bbbugg/TJUEcard/master/install.sh |
 >
 > ❓ 如果你不确定一卡通的账号密码，请『[验证或找回](https://github.com/bbbugg/TJUEcard/issues/3)』。
 
-运行 TJUEcardSetup 时，程序会引导您进行配置，包括设置 **一卡通用户名**、**一卡通密码**，以及用于接收邮件的邮箱和授权码（可选）。
+运行 TJUEcardSetup 时，程序会引导您进行配置，包括设置 **一卡通用户名**、**一卡通密码**，以及用于接收邮件的邮箱和授权码。
 
 在配置成功后，会在程序同目录下生成 `TJUEcard_user_config.json` 配置文件。配置成功后，程序会询问您是否自动设置系统定时任务。即在每天的固定时间运行 `TJUEcard`
 程序来查询电费余额，并发送邮件。设置的固定时间将是您最后一次运行 `TJUEcardSetup` 程序完成配置的时间。
@@ -156,7 +157,7 @@ A：请您新建 [GitHub Issues](https://github.com/bbbugg/TJUEcard/issues/new) 
 
 - **提交 Pull Request**：如果您修复了 bug 或实现了新功能，欢迎提交 PR。
 - **创建 Issue**：如果您有任何建议或发现了问题，请在 [GitHub Issue](https://github.com/bbbugg/TJUEcard/issues) 页面进行讨论。
-- **参与开发**：如果您对项目的开发感兴趣，欢迎通过邮件联系我们：[headfirstbbbugg@gmail.com](mailto:headfirstbbbugg@gmail.com)
+- **参与开发**：如果您对项目的开发感兴趣，欢迎通过邮件联系我们：[headfirstbbbugg@gmail.com](mailto:headfirstbbbugg@gmail.com)。
 
 ## 📋 待办事项
 
