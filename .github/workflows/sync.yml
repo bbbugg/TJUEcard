@@ -37,6 +37,23 @@ jobs:
                   echo "Release JSON:"
                   cat release.json
 
+                    echo "== file/encoding =="
+                    file -b --mime-encoding release.json || true
+                    echo "== head hex =="
+                    head -c 64 release.json | xxd
+                    echo "== raw head =="
+                    head -n 3 release.json
+                    tr -d '\r' < release.json > release.clean.json
+                    mv release.clean.json release.json
+
+                    if ! jq -e . release.json >/dev/null 2>&1; then
+                        echo "!! JSON invalid; dumping context around head & tail"
+                        head -c 200 release.json | xxd
+                        echo "---"
+                        tail -c 200 release.json | xxd
+                        exit 1
+                    fi
+
                   TAG=$(jq -r '.tag_name' release.json)
                   NAME=$(jq -r '.name // empty' release.json)
                   BODY=$(jq -r '.body // empty' release.json)
