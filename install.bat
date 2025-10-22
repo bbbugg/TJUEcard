@@ -1,65 +1,60 @@
 @echo off
-setlocal enabledelayedexpansion
-title TJUEcard Installer
+setlocal EnableExtensions EnableDelayedExpansion
 chcp 65001 >nul
 
+:: ===== 基础信息 =====
 set "OWNER=bbbugg"
 set "REPO=TJUEcard"
-set "API=https://api.github.com/repos/%OWNER%/%REPO%/releases/latest"
-
-echo 检测系统与架构...
+set "UA=TJUEcard-Installer"
 set "OS=windows"
-for /f "tokens=2 delims==" %%a in ('wmic os get osarchitecture /value ^| find "="') do set "ARCH=%%a"
-if /i "%ARCH%"=="64-bit" (set "ARCH=x86_64") else (set "ARCH=arm64")
 
+:: ===== 架构识别 =====
+set "ARCH=x86_64"
+if /i "%PROCESSOR_ARCHITECTURE%"=="ARM64" set "ARCH=arm64"
+if /i "%PROCESSOR_ARCHITEW6432%"=="ARM64" set "ARCH=arm64"
+
+:: ===== 询问安装目录 =====
 set "DEFAULT_DIR=%cd%"
-set /p INSTALL_DIR=安装目录 (默认: %DEFAULT_DIR%) : 
+set /p INSTALL_DIR=安装目录 (默认: %DEFAULT_DIR%): 
 if "%INSTALL_DIR%"=="" set "INSTALL_DIR=%DEFAULT_DIR%"
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 cd /d "%INSTALL_DIR%"
 
+echo 系统: %OS%   架构: %ARCH%
+echo 安装目录: %INSTALL_DIR%
 echo.
-echo 获取最新 Release 信息...
-set "UA=TJUEcard-Installer"
-for /f "usebackq tokens=*" %%a in (`curl -fsSL -H "User-Agent: %UA%" "%API%"`) do (
-  set "JSON=!JSON!%%a"
-)
 
-rem 提取下载链接: TJUEcard-windows-x86_64-v*.tar.gz
-for /f "tokens=*" %%u in ('echo !JSON! ^| findstr /r /c:"TJUEcard-%OS%-%ARCH%-v[0-9][0-9]*[.]tar[.]gz"') do (
-  for /f "tokens=2 delims=:" %%b in ("%%u") do (
-    set "URL=%%b"
-  )
-)
-set "URL=%URL:~2,-2%"
+:: ===== 用 PowerShell 拿下载链接 (严格匹配命名) =====
+for /f "usebackq delims=" %%U in (`powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$h=@{'User-Agent'='%UA%'}; $api='https://api.github.com/repos/%OWNER%/%REPO%/releases/latest';" ^
+  "$a=(Invoke-RestMethod -Headers $h -Uri $api).assets;" ^
+  "($a | Where-Object { $_.browser_download_url -match 'TJUEcard-%OS%-%ARCH%-v\d+\.\d+\.\d+\.tar\.gz' } | Select-Object -First 1 -ExpandProperty browser_download_url)"`) do set "URL=%%U"
 
-if "%URL%"=="" (
-  echo ❌ 未找到匹配的安装包 (TJUEcard-%OS%-%ARCH%-v*.tar.gz)
+if not defined URL (
+  echo ❌ 未找到匹配的安装包: TJUEcard-%OS%-%ARCH%-v*.tar.gz
   exit /b 1
 )
 
-for %%f in ("%URL%") do set "FILE=%%~nxf"
-echo.
-echo 下载: %FILE%
+for %%F in ("%URL%") do set "FILE=%%~nxF"
+echo ⬇️  下载: %FILE%
 curl -L -o "%FILE%" "%URL%"
 if errorlevel 1 (
-  echo ❌ 下载失败。
+  echo ❌ 下载失败
   exit /b 1
 )
 
-echo 解压中...
+echo 📦 解压中...
 tar -xzf "%FILE%"
-del "%FILE%"
+del /f /q "%FILE%"   &  echo ✅ 已删除下载压缩包
 
-if not exist "TJUEcardSetup.exe" (
-  echo ❌ 未找到 TJUEcardSetup.exe
+if not exist "%INSTALL_DIR%\TJUEcardSetup.exe" (
+  echo ❌ 未找到 TJUEcardSetup.exe (应在压缩包内) 
   exit /b 1
 )
 
-echo.
-echo 运行安装程序...
+echo 🚀 运行安装程序...
 start /wait "" "%INSTALL_DIR%\TJUEcardSetup.exe"
 
 echo.
 echo ✅ 安装完成。
-pause
+exit /b 0
