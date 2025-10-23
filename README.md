@@ -166,7 +166,7 @@ A：请您新建 [GitHub Issues](https://github.com/bbbugg/TJUEcard/issues/new) 
 - [ ] 为方便用户，下个大版本上线中心化查询服务，**用户只需提供查询房间号和邮箱即可实现每天查询**。
 
 
-## 许可证
+## ⚖️ 许可证
 
 This work is licensed under a
 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa].
