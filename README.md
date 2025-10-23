@@ -164,3 +164,13 @@ A：请您新建 [GitHub Issues](https://github.com/bbbugg/TJUEcard/issues/new) 
 - [ ] macOS 的定时任务存在问题，修复时间待定。
 - [ ] 考虑支持多房间的查询。
 - [ ] 为方便用户，下个大版本上线中心化查询服务，**用户只需提供查询房间号和邮箱即可实现每天查询**。
+
+
+## 许可证
+
+This work is licensed under a
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa].
+
+[cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
+[cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
+[cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
