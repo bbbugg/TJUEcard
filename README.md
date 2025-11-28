@@ -1,3 +1,5 @@
+[English](docs/README.en.md) | 简体中文
+
 <h1 align="center">天津大学电费自动化查询工具</h1>
 <p align="center">
   <a>本工具可自动查询您宿舍的电费，并在电费低于设定值时发送邮件提醒。解决没及时充电费，导致突然停电的痛点。</a>
@@ -59,6 +61,8 @@
     <img
       src="https://img.shields.io/github/downloads/bbbugg/TJUEcard/total?style=flat&logo=github&logoColor=EE82EE&color=EE82EE&labelColor=grey" /></a>
 </p>
+
+<div align="justify">
 
 ## ⭐ 主要功能
 
@@ -176,3 +180,5 @@ A：请您新建 [GitHub Issues](https://github.com/bbbugg/TJUEcard/issues/new) 
 ## ℹ️ 免责声明
 
 使用时请合理获取个人数据，请勿进行高频率调用，请勿将本项目的脚本用于大规模爬取网站数据。本项目仅供个人学习和交流之用，因他人利用本项目代码对网站或其他数据进行攻击而导致的任何后果，与本项目无关。在任何情况下，作者或版权持有人均不对因软件或软件的使用或其他交易而产生的或与之相关的任何索赔、损害或其他责任负责。
+
+</div>
